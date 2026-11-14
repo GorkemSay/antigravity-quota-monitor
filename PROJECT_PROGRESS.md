@@ -13,7 +13,7 @@
 
 ## Current Milestone
 
-**Milestone 2 — Active Model Detection** (Completed)
+**Milestone 3 — CLI Quota Provider** (Completed)
 
 ---
 
@@ -27,49 +27,51 @@
 ### Milestone 1 — Xcode Project and GitHub Repository
 - Created native macOS targets `AntigravityQuotaMonitor`, `AntigravityQuotaMonitorTests` (Swift Testing), and `AntigravityQuotaMonitorUITests`.
 - Configured macOS-only build settings (`MACOSX_DEPLOYMENT_TARGET = 15.0`, `ENABLE_APP_SANDBOX = NO`, `INFOPLIST_KEY_LSUIElement = YES`).
-- Implemented minimal `MenuBarExtra` entry point (`atom` SF Symbol) and initial Swift Testing verification.
-- Initialized Git and created public GitHub repository `GorkemSay/antigravity-quota-monitor`.
-- Subsequently cleaned up template `MyApp` target, renamed `Untitled Project.xcodeproj` to `AntigravityQuotaMonitor.xcodeproj`, and added MIT `LICENSE`.
+- Implemented minimal `MenuBarExtra` entry point (`atom` SF Symbol), initialized Git, pushed to `GorkemSay/antigravity-quota-monitor`, renamed `AntigravityQuotaMonitor.xcodeproj`, removed template `MyApp`, and added MIT `LICENSE`.
 
 ### Milestone 2 — Active Model Detection
-- Added `AntigravityQuotaMonitor/Models/DetectedModel.swift` to parse raw Xcode model picker labels (e.g., `"Gemini 4 Hydrogen (High)"`, `"Gemini 4 Argon (Medium)"`) into normalized names, optional effort levels, and short abbreviations (`H`, `A`, `F`, `O`, `S`, `G`), while rejecting empty or parenthetical-only strings.
-- Added `AntigravityQuotaMonitor/Services/XcodeModelDetector.swift` with `AccessibilityTreeReading` abstraction and `LiveAccessibilityTreeReader` using CoreFoundation-validated `AXUIElement` traversal (`kAXFocusedWindowAttribute`, `kAXMainWindowAttribute`, `kAXWindowsAttribute`, `AXMenuButton` + `kAXHelpAttribute == "Model"`), bounded depth (`40`) and node (`6000` per root) guards.
-- Added explicit handling for `.permissionRequired` (plus `requestAccessibilityPermissionPrompt()`), `.xcodeNotRunning`, and `.modelNotFound(inspectedNodes:)`.
-- Updated `MenuBarContentView.swift` to surface active model detection state and provide `Check Model` and `Grant Accessibility Access` actions.
-- Added unit tests in `AntigravityQuotaMonitorTests/XcodeModelDetectorTests.swift` covering parsing, permissions, missing Xcode, multi-window fallback, missing conversation, and node limit guards.
+- Implemented `DetectedModel` parser and `XcodeModelDetector` with `LiveAccessibilityTreeReader` and `AccessibilityTreeReading` abstraction.
+- Verified live model detection (`Gemini 4 Hydrogen (High)`, `H`) inside `AntigravityQuotaMonitor.app`.
+
+### Milestone 3 — CLI Quota Provider
+- Inspected live `agy -p "/usage" --output-format json` payload structure (including optional bucket `description` when remaining quota is `100%`, `remaining_fraction`, and ISO-8601 `reset_time`).
+- Created `AntigravityQuotaMonitor/Models/QuotaModels.swift` (`QuotaBucket`, `QuotaGroup`, `QuotaSnapshot`, `QuotaProviderError`).
+- Created `AntigravityQuotaMonitor/Services/AntigravityQuotaProvider.swift`:
+  - `SystemCLIProcessRunner` using `Foundation.Process`, null stdin, concurrent stdout/stderr reading, timeout termination, and `OSAllocatedUnfairLock` (zero Swift 6 concurrency warnings).
+  - `QuotaCLIResponseParser` with quote-aware, escape-aware balanced `{...}` JSON object extraction supporting leading logs and trailing Markdown.
+  - `AntigravityQuotaProvider` actor with configurable/default `agy` discovery (`$HOME/.local/bin/agy`, Homebrew/system paths, `PATH`) and in-flight task coalescing to prevent overlapping CLI runs.
+- Created `AntigravityQuotaMonitorTests/AntigravityQuotaProviderTests.swift` with 7 unit tests covering parsing, wrapped JSON extraction, error states, path resolution, timeouts/exit codes, and overlap coalescing.
 
 ---
 
 ## Technical Decisions
 
-1. **Project Rename & Template Cleanup:** Renamed `Untitled Project.xcodeproj` to `AntigravityQuotaMonitor.xcodeproj` and removed the template `MyApp` target/folder so the repository reflects a clean single-purpose macOS project.
-2. **Protocol-Backed Accessibility Reader:** Extracted `AccessibilityTreeReading` in `XcodeModelDetector.swift` so traversal logic, multi-window fallback, and edge cases are 100% deterministically unit-testable without requiring TCC permissions in headless test runners, while `LiveAccessibilityTreeReader` executes the verified CoreFoundation `AXUIElement` logic in production.
-3. **Off-Main-Thread Inspection:** `XcodeModelDetector.detectActiveModel()` runs AX inspection inside `Task.detached(priority: .utility)` so the menu bar UI remains responsive even if Xcode's accessibility tree is large or busy.
-4. **Prompt Discipline:** `AXIsProcessTrusted()` is used during checks; `AXIsProcessTrustedWithOptions` with prompt is triggered only when the user clicks **Grant Accessibility Access**.
+1. **Actor-Level Task Coalescing:** `AntigravityQuotaProvider` stores `inFlightTask` so concurrent refresh requests share one `Process` execution rather than launching overlapping `agy` processes.
+2. **Optional Bucket Descriptions:** Live `agy` output omits `buckets[].description` when a bucket is at `100%` (`remaining_fraction: 1`), so `description` is modeled as `String?`.
+3. **Swift 6 Concurrency Safety:** Used `OSAllocatedUnfairLock` inside `SystemCLIProcessRunner` and `nonisolated` model/parser types so `AntigravityQuotaProvider` compiles cleanly under Swift 6 strict concurrency checking despite `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`.
+4. **No Default Raw Output Logging:** Raw CLI stdout/stderr is never logged or persisted by default.
 
 ---
 
 ## Testing Results
 
-- `xcodebuild test -project AntigravityQuotaMonitor.xcodeproj -scheme AntigravityQuotaMonitor -destination 'platform=macOS' -only-testing:AntigravityQuotaMonitorTests`: **11 passed, 0 failed** (3 suites: `AntigravityQuotaMonitorTests`, `DetectedModel Parsing`, `XcodeModelDetector`).
-- Live non-interactive CLI probe of `XcodeModelDetector().detectActiveModelSync()` cleanly returned `.permissionRequired` when launched from a process without macOS Accessibility permission.
+- `xcodebuild test -project AntigravityQuotaMonitor.xcodeproj -scheme AntigravityQuotaMonitor -destination 'platform=macOS' -only-testing:AntigravityQuotaMonitorTests`: **18 passed, 0 failed** (5 suites).
+- Live CLI integration verification of `AntigravityQuotaProvider().fetchQuota()` against `/Users/gorkemsay/.local/bin/agy`: **Succeeded**, decoded 3 quota groups (`Gemini Models`, `Claude and GPT models`, `Gemini 4 Argon`) with zero compiler warnings.
 
 ---
 
 ## Known Issues
 
-- Live model switching in `AntigravityQuotaMonitor.app` requires granting macOS Accessibility permission to the built `AntigravityQuotaMonitor.app` bundle in System Settings; the headless test runner does not hold TCC Accessibility permission.
-- CLI quota retrieval (`agy`) and quota group matching are not yet implemented (Milestones 3–4).
+- Model-to-quota group mapping (`ModelQuotaMapper`) and UI wiring (`QuotaManager`) are not yet connected (scheduled for Milestones 4–5).
 
 ---
 
 ## Next Steps
 
-**Milestone 3 — CLI Quota Provider**
-- Implement `QuotaModels.swift` (`QuotaBucket`, `QuotaGroup`, `QuotaSnapshot`) and `AntigravityQuotaProvider.swift`.
-- Discover `agy` executable path safely (defaulting to `$HOME/.local/bin/agy` plus configurable path).
-- Execute `agy -p "/usage" --output-format json` asynchronously via `Process` with timeout protection, no overlapping executions, and quote/escape-aware JSON extraction.
-- Add unit tests using real and malformed CLI fixture outputs.
+**Milestone 4 — Model and Quota Integration**
+- Implement `ModelQuotaMapper` to map detected Xcode models (and `group.description` model lists) to quota groups cleanly and handle unknown models explicitly.
+- Implement `QuotaManager` (`@MainActor` observable coordinator) combining `XcodeModelDetector` and `AntigravityQuotaProvider`, computing lowest remaining percentage for the active model group, and preserving stale snapshot visibility on refresh errors.
+- Add unit tests for all model/group mapping and error/stale scenarios.
 
 ---
 
@@ -77,4 +79,4 @@
 
 - **Repository:** `https://github.com/GorkemSay/antigravity-quota-monitor`
 - **Branch:** `main`
-- **Latest Commit:** Updated upon Milestone 2 completion.
+- **Latest Commit:** Updated upon Milestone 3 completion.
