@@ -1,0 +1,46 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Xcode
+DerivedData/
+build/
+.build/
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+xcuserdata/
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+*.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
+*.xcuserstate
+*.xccheckout
+*.scmBlueprint
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+ModuleCache.noindex/
+OptimizationProfiles/
+
+# Swift / IDE
+.swiftpm/
+
+# Logs, temporary files, and secrets
+*.log
+tmp/
+.env
+.env.*
+*.pem
+*.p12
+*.key
+*.mobileprovision
