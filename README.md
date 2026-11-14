@@ -2,7 +2,7 @@
 
 A lightweight native macOS menu bar utility written in Swift and SwiftUI that monitors the remaining usage quota for the Google Antigravity AI model currently selected in Xcode.
 
-> **Development Status:** Milestone 5 (Native Menu Bar Interface) is complete. Background polling intervals, settings UI, and optional Launch at Login are planned for Milestone 6.
+> **Development Status:** Milestone 6 (Background Updates and Preferences) is complete. Final verification, security/privacy review, and local release packaging are planned for Milestone 7.
 
 ## Overview
 
@@ -10,7 +10,7 @@ Antigravity Quota Monitor lives unobtrusively in the macOS menu bar (`LSUIElemen
 
 ## Features
 
-### Implemented (Milestones 1–5)
+### Implemented (Milestones 1–6)
 
 - Native macOS SwiftUI `MenuBarExtra` menu bar item displaying the orbital icon (`atom`) alongside the active model's abbreviation and lowest remaining percentage (e.g., `H 90%`, `A 99%`)
 - Menu bar agent configuration (`LSUIElement = YES`) with no Dock icon or standalone window
@@ -19,16 +19,22 @@ Antigravity Quota Monitor lives unobtrusively in the macOS menu bar (`LSUIElemen
   - 5-hour and weekly quota progress bars with local-timezone reset timestamps and relative countdowns
   - Other available quota groups (`Claude and GPT models`, `Gemini 4 Argon`, etc.)
   - Explicit states for missing Accessibility permission (with prompt button), Xcode not running, unmatched models, stale snapshots, and CLI errors
-  - Last updated timestamp, manual `Refresh` (`Cmd + R`), and `Quit` (`Cmd + Q`)
-- `XcodeModelDetector` service inspecting Xcode's Accessibility tree (`AXMenuButton`, `Help == "Model"`) across focused, main, and secondary Xcode windows
-- `AntigravityQuotaProvider` actor executing `agy -p "/usage" --output-format json` asynchronously with configurable executable discovery, timeout protection, and in-flight task coalescing
-- `ModelQuotaMapper` and `QuotaManager` coordinating model detection, group mapping, and stale-data preservation
-- Swift Testing unit test suites (`AntigravityQuotaMonitorTests` — 32 tests across 8 suites)
+  - Last updated timestamp, manual `Refresh` (`Cmd + R`), inline `Settings`, and `Quit` (`Cmd + Q`)
+- Background polling & lightweight active-model tracking:
+  - Configurable periodic quota refresh timer (2, 3, 4, or 5 minutes; default 3 minutes)
+  - Periodic lightweight Xcode model check (every 15 seconds) plus immediate sync on popover open
+  - Stale threshold tracking and last-valid snapshot preservation on transient CLI errors
+- Native inline Settings (`SettingsView` + `PreferencesStore`):
+  - Refresh interval picker (2–5 min) persisted in `UserDefaults`
+  - Optional custom `agy` CLI executable path persisted in `UserDefaults`
+  - Optional Launch at Login toggle using Apple's `ServiceManagement` (`SMAppService.mainApp`)
+  - Live Accessibility permission status indicator
+- `XcodeModelDetector`, `AntigravityQuotaProvider`, `ModelQuotaMapper`, and `QuotaManager` modular services
+- Swift Testing unit test suites (`AntigravityQuotaMonitorTests` — 35 tests across 9 suites)
 
 ### Planned
 
-- **Background Refresh & Settings (Milestone 6):** Periodic refresh timer (configurable 2–5 min interval), stale threshold handling, minimal native Settings view (refresh interval, custom `agy` CLI path), and optional Launch at Login via `ServiceManagement`.
-- **Release Polish (Milestone 7):** Comprehensive verification, accessibility/privacy review, and locally runnable release build.
+- **Testing, Polish, and Release Preparation (Milestone 7):** Full test suite verification, accessibility/privacy/security review, relaunch reliability, and locally runnable release build.
 
 ## Screenshots
 
@@ -69,13 +75,13 @@ The application invokes the locally installed Antigravity CLI (`agy`, verified o
 agy -p "/usage" --output-format json
 ```
 
-Because macOS GUI applications launched from Finder or Xcode do not inherit interactive terminal `PATH` variables, `AntigravityQuotaProvider` checks `$HOME/.local/bin/agy`, `/opt/homebrew/bin/agy`, `/usr/local/bin/agy`, `/usr/bin/agy`, `PATH` entries, and an optional custom executable path.
+Because macOS GUI applications launched from Finder or Xcode do not inherit interactive terminal `PATH` variables, `AntigravityQuotaProvider` checks `$HOME/.local/bin/agy`, `/opt/homebrew/bin/agy`, `/usr/local/bin/agy`, `/usr/bin/agy`, `PATH` entries, and any custom path configured in Settings.
 
 ## How It Works (Architecture Overview)
 
 1. **Xcode Model Detection:** `XcodeModelDetector` locates running Xcode processes via `NSRunningApplication`, inspects focused, main, and secondary Xcode windows using Apple's Accessibility APIs (`AXUIElement`), and parses the model picker's accessibility label into `DetectedModel`.
 2. **Quota Retrieval:** `AntigravityQuotaProvider` executes `agy -p "/usage" --output-format json` in a non-blocking subprocess with timeout and overlap protection, extracts balanced JSON safely, and decodes `QuotaSnapshot`, `QuotaGroup`, and `QuotaBucket` models.
-3. **Matching & Presentation:** `ModelQuotaMapper` and `QuotaManager` map the active model to its quota group, compute the lowest remaining quota percentage for the menu bar indicator, preserve stale snapshots clearly if a refresh fails, and surface everything in SwiftUI `MenuBarExtra`.
+3. **Matching, Polling & Presentation:** `ModelQuotaMapper`, `QuotaManager`, and `PreferencesStore` map the active model to its quota group, refresh quotas periodically in the background, preserve stale snapshots clearly if a refresh fails, and surface everything in SwiftUI `MenuBarExtra`.
 
 ## Supported Model Groups (Observed CLI Configuration)
 
@@ -167,8 +173,8 @@ xcodebuild test \
 
 ## Known Limitations
 
-- Periodic background polling and Settings UI (custom `agy` path, refresh interval, Launch at Login) are not yet added (scheduled for Milestone 6).
 - Live model detection requires macOS Accessibility permission to be granted to the running application bundle.
+- Launch at Login (`SMAppService.mainApp`) requires a properly built application bundle location/signing to register with macOS Login Items.
 
 ## Roadmap
 
@@ -178,7 +184,7 @@ xcodebuild test \
 - [x] **Milestone 3:** `AntigravityQuotaProvider` via `agy` CLI
 - [x] **Milestone 4:** Model-to-quota mapping & `QuotaManager`
 - [x] **Milestone 5:** Full menu bar indicator and expanded popover UI
-- [ ] **Milestone 6:** Background polling, stale-data states, and Settings
+- [x] **Milestone 6:** Background polling, stale-data states, and Settings
 - [ ] **Milestone 7:** Comprehensive testing, polish, and local release build
 
 ## License

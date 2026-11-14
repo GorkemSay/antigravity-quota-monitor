@@ -8,6 +8,7 @@ nonisolated protocol ModelDetecting: Sendable {
 
 nonisolated protocol QuotaFetching: Sendable {
     func fetchQuota() async throws -> QuotaSnapshot
+    func updateCustomExecutablePath(_ path: String?) async
 }
 
 extension XcodeModelDetector: ModelDetecting {}
@@ -40,24 +41,41 @@ final class QuotaManager {
     private let modelDetector: any ModelDetecting
     private let quotaProvider: any QuotaFetching
     private let now: @Sendable () -> Date
-    private let staleThreshold: TimeInterval
+    private let explicitStaleThreshold: TimeInterval?
+    private let modelPollInterval: TimeInterval
 
+    private(set) var refreshInterval: TimeInterval
     private(set) var modelDetection: ModelDetectionResult?
     private(set) var snapshot: QuotaSnapshot?
     private(set) var lastSuccessfulUpdate: Date?
     private(set) var lastError: QuotaErrorInfo?
     private(set) var isRefreshing = false
+    private(set) var isPollingActive = false
+
+    private var quotaPollingTask: Task<Void, Never>?
+    private var modelPollingTask: Task<Void, Never>?
 
     init(
         modelDetector: any ModelDetecting = XcodeModelDetector(),
         quotaProvider: any QuotaFetching = AntigravityQuotaProvider(),
-        staleThreshold: TimeInterval = 600,
+        refreshInterval: TimeInterval = 180,
+        modelPollInterval: TimeInterval = 15,
+        staleThreshold: TimeInterval? = nil,
         now: @escaping @Sendable () -> Date = { Date() }
     ) {
         self.modelDetector = modelDetector
         self.quotaProvider = quotaProvider
-        self.staleThreshold = staleThreshold
+        self.refreshInterval = max(refreshInterval, 0.01)
+        self.modelPollInterval = max(modelPollInterval, 0.01)
+        self.explicitStaleThreshold = staleThreshold
         self.now = now
+    }
+
+    var effectiveStaleThreshold: TimeInterval {
+        if let explicitStaleThreshold {
+            return explicitStaleThreshold
+        }
+        return max(refreshInterval * 2.5, 600)
     }
 
     var isStale: Bool {
@@ -65,7 +83,7 @@ final class QuotaManager {
         if lastError != nil {
             return true
         }
-        return now().timeIntervalSince(lastSuccessfulUpdate) > staleThreshold
+        return now().timeIntervalSince(lastSuccessfulUpdate) > effectiveStaleThreshold
     }
 
     var resolvedState: ResolvedQuotaState {
@@ -110,6 +128,34 @@ final class QuotaManager {
         return "\(model.shortAbbreviation) \(bucket.remainingPercent)%"
     }
 
+    func startBackgroundPolling() {
+        guard !isPollingActive else { return }
+        isPollingActive = true
+        scheduleQuotaPollingTask()
+        scheduleModelPollingTask()
+    }
+
+    func stopBackgroundPolling() {
+        isPollingActive = false
+        quotaPollingTask?.cancel()
+        quotaPollingTask = nil
+        modelPollingTask?.cancel()
+        modelPollingTask = nil
+    }
+
+    func updateRefreshInterval(_ newInterval: TimeInterval) {
+        let sanitized = max(newInterval, 0.01)
+        guard abs(sanitized - refreshInterval) > 0.0001 else { return }
+        refreshInterval = sanitized
+        if isPollingActive {
+            scheduleQuotaPollingTask()
+        }
+    }
+
+    func updateCustomCLIPath(_ path: String?) async {
+        await quotaProvider.updateCustomExecutablePath(path)
+    }
+
     func refreshAll() async {
         guard !isRefreshing else { return }
         isRefreshing = true
@@ -139,5 +185,31 @@ final class QuotaManager {
 
     func requestAccessibilityPermission() {
         modelDetector.requestAccessibilityPermissionPrompt()
+    }
+
+    private func scheduleQuotaPollingTask() {
+        quotaPollingTask?.cancel()
+        let interval = refreshInterval
+        quotaPollingTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(interval))
+                guard !Task.isCancelled, let self else { break }
+                await self.refreshAll()
+            }
+        }
+    }
+
+    private func scheduleModelPollingTask() {
+        modelPollingTask?.cancel()
+        let interval = modelPollInterval
+        modelPollingTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(interval))
+                guard !Task.isCancelled, let self else { break }
+                if !self.isRefreshing {
+                    await self.refreshActiveModelOnly()
+                }
+            }
+        }
     }
 }

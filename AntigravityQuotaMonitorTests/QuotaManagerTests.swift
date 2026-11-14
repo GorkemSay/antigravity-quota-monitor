@@ -30,6 +30,8 @@ private actor StubModelDetector: ModelDetecting {
 
 private actor StubQuotaProvider: QuotaFetching {
     private var nextOutcome: Result<QuotaSnapshot, Error>
+    private(set) var fetchCount = 0
+    private(set) var updatedCLIPath: String?
 
     init(initial: Result<QuotaSnapshot, Error>) {
         self.nextOutcome = initial
@@ -39,8 +41,13 @@ private actor StubQuotaProvider: QuotaFetching {
         nextOutcome = outcome
     }
 
+    func updateCustomExecutablePath(_ path: String?) async {
+        updatedCLIPath = path
+    }
+
     func fetchQuota() async throws -> QuotaSnapshot {
-        try nextOutcome.get()
+        fetchCount += 1
+        return try nextOutcome.get()
     }
 }
 
@@ -179,5 +186,36 @@ struct QuotaManagerTests {
         } else {
             Issue.record("Expected .unmatchedModel state")
         }
+    }
+
+    @Test
+    @MainActor
+    func forwardsCustomCLIPathAndManagesBackgroundPolling() async throws {
+        let hydrogen = try #require(DetectedModel.parse(rawLabel: "Gemini 4 Hydrogen (High)"))
+        let detector = StubModelDetector(initial: .detected(hydrogen))
+        let provider = StubQuotaProvider(initial: .success(ModelQuotaMapperTests.sampleSnapshot))
+
+        let manager = QuotaManager(
+            modelDetector: detector,
+            quotaProvider: provider,
+            refreshInterval: 0.05,
+            modelPollInterval: 0.05
+        )
+
+        await manager.updateCustomCLIPath("/custom/bin/agy")
+        #expect(await provider.updatedCLIPath == "/custom/bin/agy")
+
+        manager.startBackgroundPolling()
+        #expect(manager.isPollingActive == true)
+
+        try await Task.sleep(for: .milliseconds(130))
+        manager.stopBackgroundPolling()
+        #expect(manager.isPollingActive == false)
+
+        let countAfterStop = await provider.fetchCount
+        #expect(countAfterStop >= 1)
+
+        try await Task.sleep(for: .milliseconds(90))
+        #expect(await provider.fetchCount == countAfterStop)
     }
 }

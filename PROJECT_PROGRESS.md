@@ -7,13 +7,13 @@
 - **Repository:** `https://github.com/GorkemSay/antigravity-quota-monitor` (Public)
 - **License:** MIT (`LICENSE`)
 - **Platform:** macOS 15.0+ (developed on macOS 26.7.2, Xcode 27.2, Swift 6.4.2)
-- **Architecture:** Modular SwiftUI (`MenuBarExtra`) + isolated domain services (`XcodeModelDetector`, `AntigravityQuotaProvider`, `ModelQuotaMapper`, `QuotaManager`)
+- **Architecture:** Modular SwiftUI (`MenuBarExtra`) + isolated domain services (`XcodeModelDetector`, `AntigravityQuotaProvider`, `ModelQuotaMapper`, `QuotaManager`, `PreferencesStore`)
 
 ---
 
 ## Current Milestone
 
-**Milestone 5 — Native Menu Bar Interface** (Completed)
+**Milestone 6 — Background Updates and Preferences** (Completed)
 
 ---
 
@@ -41,40 +41,42 @@
 - Implemented `ModelQuotaMapper.swift` and `QuotaManager.swift` (`@MainActor @Observable`) with stale-snapshot preservation and zero-warning Swift 6 concurrency isolation.
 
 ### Milestone 5 — Native Menu Bar Interface
-- Created `AntigravityQuotaMonitor/Utilities/QuotaFormatting.swift` for local-timezone reset timestamp formatting (`Today, HH:mm`, `Tomorrow, HH:mm`, `MMM d, HH:mm`), relative countdowns, last updated formatting, and remaining quota tint colors.
-- Created `AntigravityQuotaMonitor/Views/QuotaBucketRowView.swift` displaying bucket labels, percentages, linear progress bars, and local reset timestamps.
-- Updated `AntigravityQuotaMonitor/App/AntigravityQuotaMonitorApp.swift` to host `QuotaManager`, trigger startup refresh in `init()`, and render the `"atom"` SF Symbol + active model abbreviation & lowest remaining quota percentage (e.g., `H 90%`, `A 99%`) in the macOS menu bar.
-- Updated `AntigravityQuotaMonitor/Views/MenuBarContentView.swift` with active model & group breakdown, other quota groups, stale/error banners, Accessibility permission prompt, last updated footer, `Refresh` (`Cmd + R`), and `Quit` (`Cmd + Q`).
-- Added `AntigravityQuotaMonitorTests/QuotaFormattingTests.swift` covering same-day, multi-day, and last-updated formatting.
+- Implemented `QuotaFormatting.swift`, `QuotaBucketRowView.swift`, live menu bar label (`H 90%`, `A 99%`), and expanded popover UI in `MenuBarContentView.swift`.
+
+### Milestone 6 — Background Updates and Preferences
+- Created `AntigravityQuotaMonitor/Services/PreferencesStore.swift` (`UserDefaults`-backed interval clamping 2–5 min, custom CLI path persistence, and `SMAppService.mainApp` Launch at Login integration behind `LaunchAtLoginControlling`).
+- Extended `QuotaManager` with background periodic quota polling (`startBackgroundPolling` / `stopBackgroundPolling` / `updateRefreshInterval`), lightweight active-model polling (`modelPollInterval = 15s`), dynamic `effectiveStaleThreshold`, and `updateCustomCLIPath`.
+- Created `AntigravityQuotaMonitor/Views/SettingsView.swift` and integrated inline Settings navigation via gear button in `MenuBarContentView.swift` and startup wiring in `AntigravityQuotaMonitorApp.swift`.
+- Added `AntigravityQuotaMonitorTests/PreferencesStoreTests.swift` and polling/custom-path tests in `QuotaManagerTests.swift` (35 tests across 9 suites passing).
 
 ---
 
 ## Technical Decisions
 
-1. **Startup Refresh in `App.init()`:** `MenuBarExtra` popover content is lazily mounted only when clicked, so initial `QuotaManager.refreshAll()` is kicked off from `AntigravityQuotaMonitorApp.init()` to populate the menu bar indicator immediately at launch.
-2. **Popover Re-open Model Sync:** Opening the popover calls `refreshActiveModelOnly()` (fast Accessibility check without spawning `agy`) so switching models in Xcode updates the UI immediately on popover open.
-3. **Graceful Degradation:** Even if Xcode is closed or model detection fails, previously fetched quota groups remain visible inside the popover, and errors preserve stale snapshots with an explicit `Stale` badge.
+1. **Inline Settings inside `MenuBarExtra`:** Presenting `SettingsView` inline within the popover avoids macOS `LSUIElement` window-focus edge cases where standalone SwiftUI `Settings` scenes can open behind other apps.
+2. **Separated Polling Cadences:** Quota CLI polling defaults to 3 minutes (user-configurable 2–5 min), whereas lightweight active-model detection runs every 15 seconds (without invoking `agy`) so switching models in Xcode updates the menu bar badge promptly.
+3. **Graceful `SMAppService` Error Handling:** Launch at Login registration failures are surfaced cleanly inside `SettingsView` without crashing or altering persisted preference values unpredictably.
 
 ---
 
 ## Testing Results
 
-- `xcodebuild test -project AntigravityQuotaMonitor.xcodeproj -scheme AntigravityQuotaMonitor -destination 'platform=macOS' -only-testing:AntigravityQuotaMonitorTests`: **32 passed, 0 failed** (8 suites), zero Swift compiler warnings.
+- `xcodebuild test -project AntigravityQuotaMonitor.xcodeproj -scheme AntigravityQuotaMonitor -destination 'platform=macOS' -only-testing:AntigravityQuotaMonitorTests`: **35 passed, 0 failed** (9 suites), zero Swift compiler warnings.
 
 ---
 
 ## Known Issues
 
-- Automatic periodic background polling, user-configurable refresh interval / CLI path Settings, and optional Launch at Login (`ServiceManagement`) are not yet implemented (planned for Milestone 6).
+- Full project test suite (`AntigravityQuotaMonitorUITests` + `AntigravityQuotaMonitorTests`), Release build verification, and final security/privacy/accessibility audit remain for Milestone 7.
 
 ---
 
 ## Next Steps
 
-**Milestone 6 — Background Updates and Preferences**
-- Add periodic refresh timer (default 3 minutes, configurable 2–5 minutes) plus lightweight active-model polling or refresh-on-open behavior.
-- Add minimal Settings UI (popover subview or native macOS Settings window) for refresh interval, optional custom `agy` path (wired into `AntigravityQuotaProvider`), and optional Launch at Login (`SMAppService.mainApp`).
-- Add unit tests for timer scheduling, preference persistence, and settings validation.
+**Milestone 7 — Testing, Polish, and Release Preparation**
+- Run full unit + UI test targets and verify Release configuration build (`AntigravityQuotaMonitor.app`).
+- Perform final security, privacy, Accessibility, and relaunch reliability audit.
+- Update documentation and GitHub for final completion.
 
 ---
 
@@ -82,4 +84,4 @@
 
 - **Repository:** `https://github.com/GorkemSay/antigravity-quota-monitor`
 - **Branch:** `main`
-- **Latest Commit:** Updated upon Milestone 5 completion.
+- **Latest Commit:** Updated upon Milestone 6 completion.

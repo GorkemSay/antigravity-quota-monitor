@@ -3,8 +3,34 @@ import SwiftUI
 
 struct MenuBarContentView: View {
     let quotaManager: QuotaManager
+    let preferences: PreferencesStore
+
+    @State private var showingSettings = false
 
     var body: some View {
+        Group {
+            if showingSettings {
+                SettingsView(
+                    preferences: preferences,
+                    quotaManager: quotaManager,
+                    onDone: { showingSettings = false }
+                )
+            } else {
+                quotaOverviewContent
+            }
+        }
+        .padding(14)
+        .frame(width: 340)
+        .task {
+            if quotaManager.snapshot == nil && !quotaManager.isRefreshing {
+                await quotaManager.refreshAll()
+            } else {
+                await quotaManager.refreshActiveModelOnly()
+            }
+        }
+    }
+
+    private var quotaOverviewContent: some View {
         VStack(alignment: .leading, spacing: 12) {
             headerSection
 
@@ -21,15 +47,6 @@ struct MenuBarContentView: View {
             Divider()
 
             footerSection
-        }
-        .padding(14)
-        .frame(width: 340)
-        .task {
-            if quotaManager.snapshot == nil && !quotaManager.isRefreshing {
-                await quotaManager.refreshAll()
-            } else {
-                await quotaManager.refreshActiveModelOnly()
-            }
         }
     }
 
@@ -55,6 +72,16 @@ struct MenuBarContentView: View {
                     .padding(.vertical, 2)
                     .background(.orange.opacity(0.15), in: Capsule())
             }
+
+            Button {
+                showingSettings = true
+            } label: {
+                Image(systemName: "gearshape")
+                    .font(.subheadline)
+            }
+            .buttonStyle(.borderless)
+            .help("Settings")
+            .accessibilityLabel("Settings")
         }
     }
 
@@ -234,5 +261,8 @@ struct MenuBarContentView: View {
 }
 
 #Preview {
-    MenuBarContentView(quotaManager: QuotaManager())
+    MenuBarContentView(
+        quotaManager: QuotaManager(),
+        preferences: PreferencesStore()
+    )
 }
