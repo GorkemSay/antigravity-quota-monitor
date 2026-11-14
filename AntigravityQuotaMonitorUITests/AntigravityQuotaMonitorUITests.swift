@@ -1,43 +1,27 @@
-//
-//  AntigravityQuotaMonitorUITests.swift
-//  AntigravityQuotaMonitorUITests
-//
-//  Created by Görkem Say on 14.11.2026.
-//
-
 import XCTest
 
 final class AntigravityQuotaMonitorUITests: XCTestCase {
-
     override func setUpWithError() throws {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
-
-        // In UI tests it is usually best to stop immediately when a failure occurs.
         continueAfterFailure = false
-
-        // In UI tests it’s important to set the initial state - such as interface orientation - required for your tests before they run. The setUp method is a good place to do this.
-    }
-
-    override func tearDownWithError() throws {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
     }
 
     @MainActor
-    func testExample() throws {
-        // UI tests must launch the application that they test.
+    func testMenuBarAppLaunchesAndRelaunchesCleanly() throws {
         let app = XCUIApplication()
         app.launch()
 
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
-        // XCUIAutomation Documentation
-        // https://developer.apple.com/documentation/xcuiautomation
-    }
+        let isRunningFirstLaunch = app.wait(for: .runningBackground, timeout: 5)
+            || app.wait(for: .runningForeground, timeout: 1)
+        XCTAssertTrue(isRunningFirstLaunch)
 
-    @MainActor
-    func testLaunchPerformance() throws {
-        // This measures how long it takes to launch your application.
-        measure(metrics: [XCTApplicationLaunchMetric()]) {
-            XCUIApplication().launch()
-        }
+        app.terminate()
+        XCTAssertTrue(app.wait(for: .notRunning, timeout: 5))
+
+        app.launch()
+        let isRunningSecondLaunch = app.wait(for: .runningBackground, timeout: 5)
+            || app.wait(for: .runningForeground, timeout: 1)
+        XCTAssertTrue(isRunningSecondLaunch)
+
+        app.terminate()
     }
 }

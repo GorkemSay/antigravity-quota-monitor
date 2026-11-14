@@ -45,6 +45,7 @@ nonisolated struct SystemCLIProcessRunner: CLIProcessRunning {
             readGroup.enter()
             DispatchQueue.global(qos: .utility).async {
                 let data = stdoutPipe.fileHandleForReading.readDataToEndOfFile()
+                try? stdoutPipe.fileHandleForReading.close()
                 state.withLock { $0.stdoutData = data }
                 readGroup.leave()
             }
@@ -52,6 +53,7 @@ nonisolated struct SystemCLIProcessRunner: CLIProcessRunning {
             readGroup.enter()
             DispatchQueue.global(qos: .utility).async {
                 let data = stderrPipe.fileHandleForReading.readDataToEndOfFile()
+                try? stderrPipe.fileHandleForReading.close()
                 state.withLock { $0.stderrData = data }
                 readGroup.leave()
             }
@@ -98,6 +100,8 @@ nonisolated struct SystemCLIProcessRunner: CLIProcessRunning {
                 )
             } catch {
                 timeoutWorkItem.cancel()
+                try? stdoutPipe.fileHandleForReading.close()
+                try? stderrPipe.fileHandleForReading.close()
                 let shouldResume = state.withLock { current -> Bool in
                     guard !current.finished else { return false }
                     current.finished = true
