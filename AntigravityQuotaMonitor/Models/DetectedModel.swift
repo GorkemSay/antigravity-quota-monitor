@@ -1,6 +1,6 @@
 import Foundation
 
-struct DetectedModel: Sendable, Equatable {
+nonisolated struct DetectedModel: Sendable, Equatable {
     let rawLabel: String
     let normalizedName: String
     let effortLevel: String?
@@ -69,7 +69,7 @@ struct DetectedModel: Sendable, Equatable {
     }
 }
 
-enum ModelDetectionResult: Sendable, Equatable {
+nonisolated enum ModelDetectionResult: Sendable, Equatable {
     case detected(DetectedModel)
     case permissionRequired
     case xcodeNotRunning

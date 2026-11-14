@@ -2,7 +2,7 @@ import AppKit
 import ApplicationServices
 import Foundation
 
-protocol AccessibilityTreeReading: Sendable {
+nonisolated protocol AccessibilityTreeReading: Sendable {
     associatedtype Node
 
     func isProcessTrusted() -> Bool
@@ -15,7 +15,7 @@ protocol AccessibilityTreeReading: Sendable {
     func children(of node: Node) -> [Node]
 }
 
-struct LiveAccessibilityTreeReader: AccessibilityTreeReading {
+nonisolated struct LiveAccessibilityTreeReader: AccessibilityTreeReading {
     typealias Node = AXUIElement
 
     static let xcodeBundleIdentifier = "com.apple.dt.Xcode"
@@ -120,12 +120,12 @@ struct LiveAccessibilityTreeReader: AccessibilityTreeReading {
     }
 }
 
-final class XcodeModelDetector<Reader: AccessibilityTreeReading>: Sendable {
+nonisolated final class XcodeModelDetector<Reader: AccessibilityTreeReading>: Sendable {
     private let reader: Reader
     private let maxDepth: Int
     private let nodeLimitPerRoot: Int
 
-    nonisolated init(
+    init(
         reader: Reader,
         maxDepth: Int = 40,
         nodeLimitPerRoot: Int = 6000
@@ -135,7 +135,7 @@ final class XcodeModelDetector<Reader: AccessibilityTreeReading>: Sendable {
         self.nodeLimitPerRoot = nodeLimitPerRoot
     }
 
-    nonisolated func detectActiveModel() async -> ModelDetectionResult {
+    func detectActiveModel() async -> ModelDetectionResult {
         await Task.detached(priority: .utility) { [reader, maxDepth, nodeLimitPerRoot] in
             Self.detectSynchronously(
                 reader: reader,
@@ -145,7 +145,7 @@ final class XcodeModelDetector<Reader: AccessibilityTreeReading>: Sendable {
         }.value
     }
 
-    nonisolated func detectActiveModelSync() -> ModelDetectionResult {
+    func detectActiveModelSync() -> ModelDetectionResult {
         Self.detectSynchronously(
             reader: reader,
             maxDepth: maxDepth,
@@ -153,15 +153,15 @@ final class XcodeModelDetector<Reader: AccessibilityTreeReading>: Sendable {
         )
     }
 
-    nonisolated func isAccessibilityTrusted() -> Bool {
+    func isAccessibilityTrusted() -> Bool {
         reader.isProcessTrusted()
     }
 
-    nonisolated func requestAccessibilityPermissionPrompt() {
+    func requestAccessibilityPermissionPrompt() {
         reader.requestAccessibilityPermission()
     }
 
-    private nonisolated static func detectSynchronously(
+    private static func detectSynchronously(
         reader: Reader,
         maxDepth: Int,
         nodeLimitPerRoot: Int
@@ -199,7 +199,7 @@ final class XcodeModelDetector<Reader: AccessibilityTreeReading>: Sendable {
         return .modelNotFound(inspectedNodes: totalInspected)
     }
 
-    private nonisolated static func findModelLabel(
+    private static func findModelLabel(
         in node: Reader.Node,
         depth: Int,
         inspected: inout Int,

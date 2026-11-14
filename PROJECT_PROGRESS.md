@@ -13,7 +13,7 @@
 
 ## Current Milestone
 
-**Milestone 3 — CLI Quota Provider** (Completed)
+**Milestone 4 — Model and Quota Integration** (Completed)
 
 ---
 
@@ -34,44 +34,43 @@
 - Verified live model detection (`Gemini 4 Hydrogen (High)`, `H`) inside `AntigravityQuotaMonitor.app`.
 
 ### Milestone 3 — CLI Quota Provider
-- Inspected live `agy -p "/usage" --output-format json` payload structure (including optional bucket `description` when remaining quota is `100%`, `remaining_fraction`, and ISO-8601 `reset_time`).
-- Created `AntigravityQuotaMonitor/Models/QuotaModels.swift` (`QuotaBucket`, `QuotaGroup`, `QuotaSnapshot`, `QuotaProviderError`).
-- Created `AntigravityQuotaMonitor/Services/AntigravityQuotaProvider.swift`:
-  - `SystemCLIProcessRunner` using `Foundation.Process`, null stdin, concurrent stdout/stderr reading, timeout termination, and `OSAllocatedUnfairLock` (zero Swift 6 concurrency warnings).
-  - `QuotaCLIResponseParser` with quote-aware, escape-aware balanced `{...}` JSON object extraction supporting leading logs and trailing Markdown.
-  - `AntigravityQuotaProvider` actor with configurable/default `agy` discovery (`$HOME/.local/bin/agy`, Homebrew/system paths, `PATH`) and in-flight task coalescing to prevent overlapping CLI runs.
-- Created `AntigravityQuotaMonitorTests/AntigravityQuotaProviderTests.swift` with 7 unit tests covering parsing, wrapped JSON extraction, error states, path resolution, timeouts/exit codes, and overlap coalescing.
+- Implemented `QuotaModels.swift` and `AntigravityQuotaProvider.swift` (`SystemCLIProcessRunner`, `QuotaCLIResponseParser`, task coalescing, and executable path discovery).
+- Verified live CLI retrieval against `/Users/gorkemsay/.local/bin/agy`.
+
+### Milestone 4 — Model and Quota Integration
+- Created `AntigravityQuotaMonitor/Services/ModelQuotaMapper.swift` mapping detected models to quota groups via exact group names, `group.description` model lists, and model-family fallbacks (ensuring `Gemini 4 Argon` maps separately from `Gemini Models` and unknown models return `.unmatched` instead of guessing).
+- Created `AntigravityQuotaMonitor/Services/QuotaManager.swift` (`@MainActor @Observable`) orchestrating `ModelDetecting` and `QuotaFetching`, producing compact menu bar strings (`"H 90%"`, `"A 99%"`), supporting lightweight active-model re-checks (`refreshActiveModelOnly()`), and preserving stale snapshots transparently with `isStale` and `lastError` when subsequent refreshes fail or exceed `staleThreshold`.
+- Marked `DetectedModel`, `ModelDetectionResult`, `AccessibilityTreeReading`, `LiveAccessibilityTreeReader`, `XcodeModelDetector`, `ModelDetecting`, and `QuotaFetching` explicitly `nonisolated` for zero-warning Swift 6 strict concurrency compliance.
+- Added `AntigravityQuotaMonitorTests/ModelQuotaMapperTests.swift` and `AntigravityQuotaMonitorTests/QuotaManagerTests.swift` (11 new tests covering mapping, unknown models, model switching, stale preservation, and error states).
 
 ---
 
 ## Technical Decisions
 
-1. **Actor-Level Task Coalescing:** `AntigravityQuotaProvider` stores `inFlightTask` so concurrent refresh requests share one `Process` execution rather than launching overlapping `agy` processes.
-2. **Optional Bucket Descriptions:** Live `agy` output omits `buckets[].description` when a bucket is at `100%` (`remaining_fraction: 1`), so `description` is modeled as `String?`.
-3. **Swift 6 Concurrency Safety:** Used `OSAllocatedUnfairLock` inside `SystemCLIProcessRunner` and `nonisolated` model/parser types so `AntigravityQuotaProvider` compiles cleanly under Swift 6 strict concurrency checking despite `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`.
-4. **No Default Raw Output Logging:** Raw CLI stdout/stderr is never logged or persisted by default.
+1. **Three-Tier Model-to-Group Matching:** `ModelQuotaMapper` checks (1) exact normalized group name (`Gemini 4 Argon`), (2) comma-separated model names in `group.description`, and (3) family fallbacks (`argon` vs `hydrogen`/`flash`/`gemini` vs `claude`/`opus`/`sonnet`/`gpt`), returning `.unmatched` for unknown models rather than displaying misleading percentages.
+2. **Stale Snapshot Preservation:** When `QuotaManager.refreshAll()` fails after an earlier successful fetch, `snapshot` and `lastSuccessfulUpdate` are preserved, `lastError` records the failure, and `isStale` becomes `true`.
+3. **Explicit `nonisolated` Boundaries:** Because the project enables `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`, pure domain types and background worker protocols are explicitly marked `nonisolated` so Swift 6 concurrency checks pass with zero warnings.
 
 ---
 
 ## Testing Results
 
-- `xcodebuild test -project AntigravityQuotaMonitor.xcodeproj -scheme AntigravityQuotaMonitor -destination 'platform=macOS' -only-testing:AntigravityQuotaMonitorTests`: **18 passed, 0 failed** (5 suites).
-- Live CLI integration verification of `AntigravityQuotaProvider().fetchQuota()` against `/Users/gorkemsay/.local/bin/agy`: **Succeeded**, decoded 3 quota groups (`Gemini Models`, `Claude and GPT models`, `Gemini 4 Argon`) with zero compiler warnings.
+- `xcodebuild test -project AntigravityQuotaMonitor.xcodeproj -scheme AntigravityQuotaMonitor -destination 'platform=macOS' -only-testing:AntigravityQuotaMonitorTests`: **29 passed, 0 failed** (7 suites), zero Swift compiler warnings.
 
 ---
 
 ## Known Issues
 
-- Model-to-quota group mapping (`ModelQuotaMapper`) and UI wiring (`QuotaManager`) are not yet connected (scheduled for Milestones 4–5).
+- `QuotaManager` is not yet wired into `AntigravityQuotaMonitorApp` / `MenuBarContentView` (planned for Milestone 5).
 
 ---
 
 ## Next Steps
 
-**Milestone 4 — Model and Quota Integration**
-- Implement `ModelQuotaMapper` to map detected Xcode models (and `group.description` model lists) to quota groups cleanly and handle unknown models explicitly.
-- Implement `QuotaManager` (`@MainActor` observable coordinator) combining `XcodeModelDetector` and `AntigravityQuotaProvider`, computing lowest remaining percentage for the active model group, and preserving stale snapshot visibility on refresh errors.
-- Add unit tests for all model/group mapping and error/stale scenarios.
+**Milestone 5 — Native Menu Bar Interface**
+- Wire `QuotaManager` into `AntigravityQuotaMonitorApp` and `MenuBarContentView`.
+- Display `"atom"` SF Symbol + active model abbreviation & lowest remaining quota percentage in the macOS menu bar (e.g., `H 90%`, `A 99%`, or explicit permission/loading/stale indicators).
+- Build the expanded popover showing active model & group breakdown, 5-hour / weekly progress bars, local-timezone reset times, other quota groups, last updated timestamp, refresh button, and quit button.
 
 ---
 
@@ -79,4 +78,4 @@
 
 - **Repository:** `https://github.com/GorkemSay/antigravity-quota-monitor`
 - **Branch:** `main`
-- **Latest Commit:** Updated upon Milestone 3 completion.
+- **Latest Commit:** Updated upon Milestone 4 completion.

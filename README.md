@@ -2,7 +2,7 @@
 
 A lightweight native macOS menu bar utility written in Swift and SwiftUI that monitors the remaining usage quota for the Google Antigravity AI model currently selected in Xcode.
 
-> **Development Status:** Milestone 3 (CLI Quota Provider) is complete. Model-to-quota group integration and the full menu bar quota display are planned for Milestones 4–5.
+> **Development Status:** Milestone 4 (Model and Quota Integration) is complete. The full menu bar quota indicator and expanded popover UI are planned for Milestone 5.
 
 ## Overview
 
@@ -10,7 +10,7 @@ Antigravity Quota Monitor is designed to live unobtrusively in the macOS menu ba
 
 ## Features
 
-### Implemented (Milestones 1–3)
+### Implemented (Milestones 1–4)
 
 - Native macOS SwiftUI `MenuBarExtra` application shell (`AntigravityQuotaMonitor`)
 - Menu bar agent configuration (`LSUIElement = YES`) with no Dock icon or standalone window
@@ -19,13 +19,14 @@ Antigravity Quota Monitor is designed to live unobtrusively in the macOS menu ba
 - `DetectedModel` parser normalizing model names, effort tiers (e.g., `(High)`, `(Medium)`), and short abbreviations (`H`, `A`, `F`, `O`, `S`, `G`)
 - `AntigravityQuotaProvider` actor executing `agy -p "/usage" --output-format json` asynchronously with configurable executable discovery (`$HOME/.local/bin/agy`, Homebrew/system paths, or custom path), timeout protection, and in-flight call coalescing (no overlapping subprocesses)
 - Quote- and escape-aware balanced JSON extraction (`QuotaCLIResponseParser`) supporting optional fields and trailing text
-- Swift Testing unit test suites (`AntigravityQuotaMonitorTests`)
+- `ModelQuotaMapper` mapping active models to their quota groups via exact names, CLI `group.description` model lists, and model-family fallbacks without guessing unknown models
+- `QuotaManager` (`@Observable`, `@MainActor`) combining model detection and quota snapshots, selecting the lowest remaining bucket percentage, and preserving stale snapshots transparently on refresh failures
+- Swift Testing unit test suites (`AntigravityQuotaMonitorTests` — 29 tests across 7 suites)
 
 ### Planned
 
-- **Model-to-Quota Mapping (Milestone 4):** Map detected models (Hydrogen, Argon, Flash, Claude, GPT) to their corresponding quota groups and select the lowest remaining percentage via `QuotaManager`.
-- **Expanded Menu Bar UI (Milestone 5):** Display active model abbreviation and percentage in the menu bar, detailed bucket progress bars, local-timezone reset times, other quota groups, and last refresh timestamp.
-- **Background Refresh & Settings (Milestone 6):** Periodic refresh intervals, manual refresh, stale-data handling, launch-at-login via `ServiceManagement`, and configurable CLI executable path in Settings.
+- **Expanded Menu Bar UI (Milestone 5):** Display active model abbreviation and percentage in the menu bar (`H 90%`, `A 99%`), detailed bucket progress bars, local-timezone reset times, other quota groups, and last refresh timestamp.
+- **Background Refresh & Settings (Milestone 6):** Periodic refresh intervals, manual refresh, stale-data indicators, launch-at-login via `ServiceManagement`, and configurable CLI executable path in Settings.
 
 ## Screenshots
 
@@ -72,7 +73,8 @@ Because macOS GUI applications launched from Finder or Xcode do not inherit inte
 
 1. **Xcode Model Detection (Implemented in Milestone 2):** `XcodeModelDetector` locates running Xcode processes via `NSRunningApplication`, inspects focused, main, and secondary Xcode windows using Apple's Accessibility APIs (`AXUIElement`), and parses the model picker's accessibility label into `DetectedModel`.
 2. **Quota Retrieval (Implemented in Milestone 3):** `AntigravityQuotaProvider` executes `agy -p "/usage" --output-format json` in a non-blocking subprocess with timeout and overlap protection, extracts balanced JSON safely, and decodes `QuotaSnapshot`, `QuotaGroup`, and `QuotaBucket` models.
-3. **Matching & Presentation (Planned in Milestones 4–5):** `QuotaManager` will map the active model to its quota group, compute the lowest remaining quota percentage for the menu bar indicator, and preserve stale snapshots clearly if a refresh fails.
+3. **Matching & Coordination (Implemented in Milestone 4):** `ModelQuotaMapper` and `QuotaManager` map the active model to its quota group, compute the lowest remaining quota percentage for the menu bar indicator, and preserve stale snapshots clearly if a refresh fails.
+4. **Menu Bar UI (Planned in Milestone 5):** `AntigravityQuotaMonitorApp` and `MenuBarContentView` will present the live menu bar label and expanded quota breakdown.
 
 ## Supported Model Groups (Observed CLI Configuration)
 
@@ -164,7 +166,7 @@ xcodebuild test \
 
 ## Known Limitations
 
-- Model-to-quota group mapping and live quota UI integration are not yet connected (scheduled for Milestones 4–5).
+- The live menu bar quota percentage label and expanded bucket UI are not yet wired into `MenuBarExtra` (scheduled for Milestone 5).
 - Live model detection requires macOS Accessibility permission to be granted to the running application bundle.
 
 ## Roadmap
@@ -173,7 +175,7 @@ xcodebuild test \
 - [x] **Milestone 1:** macOS Xcode target, menu bar shell, and GitHub repository setup
 - [x] **Milestone 2:** `XcodeModelDetector` via Accessibility APIs
 - [x] **Milestone 3:** `AntigravityQuotaProvider` via `agy` CLI
-- [ ] **Milestone 4:** Model-to-quota mapping & `QuotaManager`
+- [x] **Milestone 4:** Model-to-quota mapping & `QuotaManager`
 - [ ] **Milestone 5:** Full menu bar indicator and expanded popover UI
 - [ ] **Milestone 6:** Background polling, stale-data states, and Settings
 - [ ] **Milestone 7:** Comprehensive testing, polish, and local release build
