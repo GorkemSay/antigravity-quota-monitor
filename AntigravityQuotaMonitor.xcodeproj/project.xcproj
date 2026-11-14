@@ -18,7 +18,7 @@
       "kind": "group",
       "name": "Products",
       "children": [
-        { "path": "<PRODUCTS>/AntigravityQuotaMonitor.app", "id": "42D0165630A8A15A0009E82D", "type": "wrapper.application", "index": false },
+        { "path": "<PRODUCTS>/Antigravity Quota Monitor.app", "id": "42D0165630A8A15A0009E82D", "type": "wrapper.application", "index": false },
         { "path": "<PRODUCTS>/AntigravityQuotaMonitorTests.xctest", "id": "42D0166230A8A15C0009E82D", "type": "wrapper.cfbundle", "index": false },
         { "path": "<PRODUCTS>/AntigravityQuotaMonitorUITests.xctest", "id": "42D0166C30A8A15C0009E82D", "type": "wrapper.cfbundle", "index": false },
       ],
@@ -28,7 +28,7 @@
     {
       "name": "AntigravityQuotaMonitor",
       "id": "42D0165530A8A15A0009E82D",
-      "product": "Products/AntigravityQuotaMonitor.app",
+      "product": "Products/Antigravity Quota Monitor.app",
       "product-type": "application",
       "build-phases": [
         "compile-sources",
@@ -63,7 +63,8 @@
         "MACOSX_DEPLOYMENT_TARGET": "15.0",
         "MARKETING_VERSION": "1.0",
         "PRODUCT_BUNDLE_IDENTIFIER": "com.gorkemsay.AntigravityQuotaMonitor",
-        "PRODUCT_NAME": "$(TARGET_NAME)",
+        "PRODUCT_MODULE_NAME": "AntigravityQuotaMonitor",
+        "PRODUCT_NAME": "Antigravity Quota Monitor",
         "REGISTER_APP_GROUPS": "YES",
         "SDKROOT": "macosx",
         "STRING_CATALOG_GENERATE_SYMBOLS": "YES",
@@ -109,7 +110,7 @@
         "SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY": "YES",
         "SWIFT_VERSION": "5.0",
         "TARGETED_DEVICE_FAMILY": "1,2,7",
-        "TEST_HOST": "$(BUILT_PRODUCTS_DIR)/AntigravityQuotaMonitor.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/AntigravityQuotaMonitor",
+        "TEST_HOST": "$(BUILT_PRODUCTS_DIR)/Antigravity Quota Monitor.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Antigravity Quota Monitor",
         "XROS_DEPLOYMENT_TARGET": "27.2",
       },
     }, {

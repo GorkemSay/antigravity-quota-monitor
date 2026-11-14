@@ -16,13 +16,11 @@ struct QuotaBucketRowView: View {
 
                 Text("\(bucket.remainingPercent)%")
                     .font((isCompact ? Font.caption : Font.subheadline).monospacedDigit().weight(.semibold))
-                    .foregroundStyle(QuotaFormatting.tintColor(for: bucket.remainingPercent))
+                    .foregroundStyle(tintColor)
             }
 
-            ProgressView(value: min(max(bucket.remainingFraction, 0), 1))
-                .progressViewStyle(.linear)
-                .tint(QuotaFormatting.tintColor(for: bucket.remainingPercent))
-                .controlSize(.small)
+            ProgressView(value: clampedFraction)
+                .progressViewStyle(QuotaLinearProgressStyle(tint: tintColor))
 
             if let resetText = QuotaFormatting.formatResetTime(bucket.resetTime) {
                 Text(resetText)
@@ -31,6 +29,14 @@ struct QuotaBucketRowView: View {
                     .lineLimit(1)
             }
         }
+    }
+
+    private var clampedFraction: Double {
+        min(max(bucket.remainingFraction, 0), 1)
+    }
+
+    private var tintColor: Color {
+        QuotaFormatting.tintColor(for: bucket.remainingPercent)
     }
 
     private var displayTitle: String {
@@ -42,5 +48,24 @@ struct QuotaBucketRowView: View {
         default:
             return bucket.name
         }
+    }
+}
+
+private struct QuotaLinearProgressStyle: ProgressViewStyle {
+    let tint: Color
+
+    func makeBody(configuration: Configuration) -> some View {
+        let fraction = min(max(configuration.fractionCompleted ?? 0, 0), 1)
+        GeometryReader { proxy in
+            ZStack(alignment: .leading) {
+                Capsule()
+                    .fill(Color.primary.opacity(0.14))
+
+                Capsule()
+                    .fill(tint)
+                    .frame(width: max(fraction > 0 ? 5 : 0, proxy.size.width * fraction))
+            }
+        }
+        .frame(height: 5)
     }
 }

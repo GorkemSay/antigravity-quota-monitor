@@ -78,8 +78,10 @@ struct MenuBarContentView: View {
             } label: {
                 Image(systemName: "gearshape")
                     .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .contentShape(Rectangle())
             }
-            .buttonStyle(.borderless)
+            .buttonStyle(.plain)
             .help("Settings")
             .accessibilityLabel("Settings")
         }

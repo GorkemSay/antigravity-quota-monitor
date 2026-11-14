@@ -2,33 +2,29 @@
 
 A lightweight native macOS menu bar utility written in Swift and SwiftUI that monitors the remaining usage quota for the Google Antigravity AI model currently selected in Xcode.
 
-> **Status:** All milestones (0–7) are complete (`v1.0`). Built with native SwiftUI, Apple Accessibility APIs, and the official Antigravity CLI (`agy`).
-
 ## Overview
 
-Antigravity Quota Monitor lives unobtrusively in the macOS menu bar (`LSUIElement`), detects which Antigravity AI model is selected in Xcode's built-in assistant, queries real quota data through the official Antigravity CLI (`agy`), and surfaces the most restrictive remaining quota percentage at a glance (for example, `H 90%` or `A 99%`).
+Antigravity Quota Monitor lives unobtrusively in the macOS menu bar (`LSUIElement`), detects which Antigravity AI model is selected in Xcode's built-in coding assistant, queries usage data through the official Antigravity CLI (`agy`), and displays the most restrictive remaining quota percentage at a glance (for example, `H 86%` or `A 99%`).
 
 ## Features
 
-- Native macOS SwiftUI `MenuBarExtra` menu bar item displaying the orbital icon (`atom`) alongside the active model's abbreviation and lowest remaining percentage (e.g., `H 90%`, `A 99%`)
-- Menu bar agent configuration (`LSUIElement = YES`) with no Dock icon or standalone window
-- Expanded SwiftUI popover showing:
+- **At-a-Glance Menu Bar Indicator:** Displays the orbital icon (`atom`) alongside the active model's abbreviation and lowest remaining quota percentage (e.g., `H 86%`, `A 99%`) with no Dock icon or standalone window.
+- **Detailed Quota Popover:**
   - Active Xcode model label, matched quota group, and color-coded limiting percentage
   - 5-hour and weekly quota progress bars with local-timezone reset timestamps and relative countdowns
-  - Other available quota groups (`Claude and GPT models`, `Gemini 4 Argon`, etc.)
-  - Explicit states for missing Accessibility permission (with prompt button), Xcode not running, unmatched models, stale snapshots, and CLI errors
+  - Secondary view of all other available quota groups (such as `Claude and GPT models` and `Gemini 4 Argon`)
+  - Clear status messages for missing Accessibility permission, inactive Xcode sessions, unmatched models, stale snapshots, and CLI errors
   - Last updated timestamp, manual `Refresh` (`Cmd + R`), inline `Settings`, and `Quit` (`Cmd + Q`)
-- Background polling & lightweight active-model tracking:
-  - Configurable periodic quota refresh timer (2, 3, 4, or 5 minutes; default 3 minutes)
-  - Periodic lightweight Xcode model check (every 15 seconds) plus immediate sync on popover open
-  - Stale threshold tracking and last-valid snapshot preservation on transient CLI errors
-  - In-flight CLI task coalescing so overlapping `agy` subprocesses never spawn
-- Native inline Settings (`SettingsView` + `PreferencesStore`):
-  - Refresh interval picker (2–5 min) persisted in `UserDefaults`
-  - Optional custom `agy` CLI executable path persisted in `UserDefaults`
-  - Optional Launch at Login toggle using Apple's `ServiceManagement` (`SMAppService.mainApp`)
+- **Smart Background Refresh:**
+  - Configurable periodic quota polling (2, 3, 4, or 5 minutes; default 3 minutes)
+  - Lightweight active Xcode model tracking every 15 seconds plus immediate sync when opening the popover
+  - Preserves the last valid snapshot with a `Stale` indicator if a temporary CLI refresh fails
+  - Coalesces concurrent refresh requests so duplicate `agy` subprocesses never spawn
+- **Native Inline Settings:**
+  - Refresh interval selector (2–5 min) saved in `UserDefaults`
+  - Optional custom `agy` CLI executable path override
+  - Optional **Launch at Login** toggle via Apple's `ServiceManagement` (`SMAppService.mainApp`)
   - Live Accessibility permission status indicator
-- Tested modular architecture (`35` unit tests across `9` Swift Testing suites + UI launch/relaunch verification)
 
 ## Screenshots
 
@@ -38,71 +34,73 @@ Antigravity Quota Monitor lives unobtrusively in the macOS menu bar (`LSUIElemen
 
 ## System Requirements
 
-- macOS 15.0 or later (verified on macOS 26.7.2, Apple Silicon)
-- Xcode 16+ / Xcode 27.2+ (for building from source)
-- macOS Accessibility permission granted to `AntigravityQuotaMonitor` (required for active model detection)
-- Antigravity CLI (`agy`) installed locally and authenticated (verified on `1.5.9`)
+- macOS 15.0 (Sequoia) or later
+- [Antigravity CLI (`agy`)](https://antigravity.google) installed locally and authenticated
+- macOS Accessibility permission granted to **Antigravity Quota Monitor** (required for automatic Xcode model detection)
+- Xcode 16+ (only required if building from source)
 
-## Installation
+## Download & Installation
 
-### Option 1: Build and Run from Xcode
+### Option 1: Download Prebuilt App (Recommended)
+
+1. Download the latest `Antigravity-Quota-Monitor-macOS.zip` archive from the [GitHub Releases](https://github.com/GorkemSay/antigravity-quota-monitor/releases/latest) page.
+2. Double-click the `.zip` file to extract **Antigravity Quota Monitor.app**.
+3. Drag **Antigravity Quota Monitor.app** into your **Applications** (`/Applications`) folder.
+4. Launch **Antigravity Quota Monitor** from Applications or Spotlight.
+   > **Note on Gatekeeper:** Because the prebuilt archive is not notarized with an Apple Developer ID certificate, macOS may show an unverified developer prompt on first launch. Open **System Settings > Privacy & Security** and click **Open Anyway**, or run `xattr -dr com.apple.quarantine "/Applications/Antigravity Quota Monitor.app"` in Terminal before opening.
+5. Click the **atom** icon in the menu bar and select **Grant Accessibility Access** (or enable **Antigravity Quota Monitor** under **System Settings > Privacy & Security > Accessibility**).
+
+### Option 2: Build and Install from Source
 
 1. Clone the repository:
    ```bash
    git clone https://github.com/GorkemSay/antigravity-quota-monitor.git
    cd antigravity-quota-monitor
    ```
-2. Open `AntigravityQuotaMonitor.xcodeproj` in Xcode.
-3. Select the **AntigravityQuotaMonitor** scheme and **My Mac** run destination.
-4. Build and run (`Cmd + R`).
-5. When prompted (or via **System Settings > Privacy & Security > Accessibility**), grant Accessibility permission to **AntigravityQuotaMonitor**.
+2. Build the Release application bundle and install it to `/Applications`:
+   ```bash
+   xcodebuild build \
+     -project "AntigravityQuotaMonitor.xcodeproj" \
+     -scheme "AntigravityQuotaMonitor" \
+     -configuration Release \
+     -destination "platform=macOS" \
+     -derivedDataPath build/ReleaseDerivedData
 
-### Option 2: Local Release Build (`xcodebuild`)
-
-```bash
-xcodebuild build \
-  -project "AntigravityQuotaMonitor.xcodeproj" \
-  -scheme "AntigravityQuotaMonitor" \
-  -configuration Release \
-  -destination "platform=macOS" \
-  -derivedDataPath build/ReleaseDerivedData
-```
-
-The signed application bundle is created at:
-
-```text
-build/ReleaseDerivedData/Build/Products/Release/AntigravityQuotaMonitor.app
-```
-
-You can copy `AntigravityQuotaMonitor.app` to `/Applications` and launch it directly.
+   rm -rf "/Applications/Antigravity Quota Monitor.app"
+   cp -R "build/ReleaseDerivedData/Build/Products/Release/Antigravity Quota Monitor.app" /Applications/
+   rm -rf build
+   open "/Applications/Antigravity Quota Monitor.app"
+   ```
+   Alternatively, open `AntigravityQuotaMonitor.xcodeproj` in Xcode, select the **AntigravityQuotaMonitor** scheme, and press `Cmd + R`.
+3. Grant Accessibility permission to **Antigravity Quota Monitor** when prompted.
 
 ## Permissions and Privacy
 
-- **Accessibility Permission:** Required strictly to inspect the selected model label in Xcode's model picker control (`AXMenuButton`). The application does not collect source code, conversation history, or unrelated application data.
-- **No App Sandbox (Local Execution):** App Sandbox is disabled on the macOS target so the app can query Accessibility attributes from Xcode and invoke the user-installed `agy` CLI executable via `Process`.
-- **Credentials & Logging:** The application does not read, store, or extract OAuth tokens or authentication credentials, makes no direct network calls, and does not log raw CLI output by default.
+- **Accessibility Permission:** Used strictly to inspect the selected model label in Xcode's model picker control (`AXMenuButton`). The application does not read source code, conversation history, or unrelated application data.
+- **Local Execution (No App Sandbox):** App Sandbox is disabled on the macOS target so the app can query Accessibility attributes from Xcode and run the locally installed `agy` CLI executable via `Process`.
+- **Credentials & Logging:** The application does not read, store, or extract OAuth tokens or authentication credentials, makes no direct network calls, and does not log raw CLI output.
 
 ## Antigravity CLI Requirements
 
-The application invokes the locally installed Antigravity CLI (`agy`, verified on `1.5.9` at `~/.local/bin/agy`) using:
+Antigravity Quota Monitor queries usage data through your locally installed `agy` CLI using:
 
 ```bash
 agy -p "/usage" --output-format json
 ```
 
-Because macOS GUI applications launched from Finder or Xcode do not inherit interactive terminal `PATH` variables, `AntigravityQuotaProvider` checks `$HOME/.local/bin/agy`, `/opt/homebrew/bin/agy`, `/usr/local/bin/agy`, `/usr/bin/agy`, `PATH` entries, and any custom path configured in Settings.
+Because macOS GUI applications launched from Finder do not inherit interactive shell `PATH` variables, the app automatically searches `$HOME/.local/bin/agy`, `/opt/homebrew/bin/agy`, `/usr/local/bin/agy`, `/usr/bin/agy`, and `PATH`. If your `agy` binary lives elsewhere, you can specify a custom path inside **Settings**.
 
-## How It Works (Architecture Overview)
+## How It Works
 
-1. **Xcode Model Detection (`XcodeModelDetector`):** Locates running Xcode processes via `NSRunningApplication`, inspects focused, main, and secondary Xcode windows using Apple's Accessibility APIs (`AXUIElement`), and parses the model picker's accessibility label into `DetectedModel`.
-2. **Quota Retrieval (`AntigravityQuotaProvider`):** Executes `agy -p "/usage" --output-format json` in a non-blocking subprocess with timeout, file-handle cleanup, and overlap protection, extracts balanced JSON safely, and decodes `QuotaSnapshot`, `QuotaGroup`, and `QuotaBucket` models.
-3. **Matching, Polling & Presentation (`ModelQuotaMapper`, `QuotaManager`, `PreferencesStore`):** Maps the active model to its quota group, refreshes quotas periodically in the background, preserves stale snapshots clearly if a refresh fails, and presents everything in SwiftUI `MenuBarExtra`.
+1. **Xcode Model Detection (`XcodeModelDetector`):** Locates running Xcode instances via `NSRunningApplication`, traverses Xcode's window Accessibility hierarchy (`AXUIElement`), and parses the active model selector label into a structured `DetectedModel`.
+2. **Quota Retrieval (`AntigravityQuotaProvider`):** Runs `agy -p "/usage" --output-format json` in an isolated subprocess with timeout, handle cleanup, and task coalescing, then parses the JSON response into `QuotaSnapshot`, `QuotaGroup`, and `QuotaBucket` models.
+3. **Matching & Presentation (`ModelQuotaMapper`, `QuotaManager`, `PreferencesStore`):** Matches the detected model to its quota group, manages background refresh intervals and stale-data handling, and renders the SwiftUI `MenuBarExtra` interface.
 
-## Supported Model Groups (Observed CLI Configuration)
+## Supported Model Groups
 
-Based on observed CLI output on macOS (subject to account configuration and future CLI updates):
+Based on Antigravity CLI usage output (subject to account configuration and future CLI updates):
 
-| Model | Quota Group | Observed Buckets |
+| Model | Quota Group | Quota Windows |
 |---|---|---|
 | Gemini 4 Hydrogen | Gemini Models | Weekly, 5-hour |
 | Gemini 3.8 Flash | Gemini Models | Weekly, 5-hour |
@@ -172,11 +170,9 @@ Our approach prioritizes:
 
 > *Note: Antigravity Quota Monitor is an independent utility and is not endorsed by, certified by, or affiliated with Google or Apple.*
 
-## Development Instructions
+## Development & Testing
 
-### Running Tests
-
-Using Xcode, select the **AntigravityQuotaMonitor** scheme and press `Cmd + U`, or run via `xcodebuild`:
+To run the full unit and UI test suite from Xcode, open `AntigravityQuotaMonitor.xcodeproj` and press `Cmd + U`, or run via terminal:
 
 ```bash
 xcodebuild test \
@@ -187,20 +183,9 @@ xcodebuild test \
 
 ## Known Limitations
 
-- Live model detection requires macOS Accessibility permission to be granted to the running application bundle.
-- Launch at Login (`SMAppService.mainApp`) requires a properly built application bundle location and signing to register with macOS Login Items.
+- Active model detection requires macOS Accessibility permission to be granted to the running application bundle.
+- **Launch at Login** (`SMAppService.mainApp`) requires the app to reside in a standard location such as `/Applications`.
 - Depends on the Antigravity CLI `agy -p "/usage" --output-format json` contract and Xcode's Accessibility tree labels remaining compatible across future updates.
-
-## Roadmap
-
-- [x] **Milestone 0:** Environment and feasibility review
-- [x] **Milestone 1:** macOS Xcode target, menu bar shell, and GitHub repository setup
-- [x] **Milestone 2:** `XcodeModelDetector` via Accessibility APIs
-- [x] **Milestone 3:** `AntigravityQuotaProvider` via `agy` CLI
-- [x] **Milestone 4:** Model-to-quota mapping & `QuotaManager`
-- [x] **Milestone 5:** Full menu bar indicator and expanded popover UI
-- [x] **Milestone 6:** Background polling, stale-data states, and Settings
-- [x] **Milestone 7:** Comprehensive testing, polish, and local release build
 
 ## License
 

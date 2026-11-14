@@ -13,7 +13,7 @@
 
 ## Current Milestone
 
-**Milestone 7 — Testing, Polish, and Release Preparation** (Completed — `v1.0` Ready)
+**Milestone 7 — Testing, Polish, and Release Preparation** (Completed — `v1.0.0` Released)
 
 ---
 
@@ -49,25 +49,28 @@
 ### Milestone 7 — Testing, Polish, and Release Preparation
 - Hardened `SystemCLIProcessRunner` to explicitly close stdout/stderr `FileHandle` descriptors after EOF and on launch failure to eliminate file-descriptor leakage.
 - Updated `AntigravityQuotaMonitorUITests/AntigravityQuotaMonitorUITests.swift` with `testMenuBarAppLaunchesAndRelaunchesCleanly()` verifying agent launch, termination, and clean relaunch.
-- Generated full macOS `AppIcon.appiconset` (`16x16` through `512x512@2x`) matching the menu bar `"atom"` emblem and installed the Release `.app` bundle to `/Applications/AntigravityQuotaMonitor.app`.
-- Rendered live SwiftUI screenshots (`docs/screenshots/menubar-popover.png` and `docs/screenshots/settings-popover.png`) and embedded them in `README.md`.
+- Generated full macOS `AppIcon.appiconset` (`16x16` through `512x512@2x`) matching the menu bar `"atom"` emblem.
+- Updated `PRODUCT_NAME` to `"Antigravity Quota Monitor"` (while preserving `PRODUCT_MODULE_NAME = "AntigravityQuotaMonitor"`) so the bundle installs cleanly as `/Applications/Antigravity Quota Monitor.app`.
+- Updated `QuotaBucketRowView` with a pure SwiftUI `QuotaLinearProgressStyle` and `MenuBarContentView` gear button with `.buttonStyle(.plain)`, and re-rendered clean Retina screenshots (`docs/screenshots/menubar-popover.png` and `docs/screenshots/settings-popover.png`).
+- Polished `README.md` for end users (removed internal roadmap, added clear Download & Build installation instructions).
 - Audited all source files under `AntigravityQuotaMonitor/` (`print`, `NSLog`, `os_log`, `Logger`, `SecItem`, `URLSession`, HTTP/HTTPS) — zero matches (`CLEAN_PRIVACY_AUDIT`).
-- Verified full unit + UI test suite and `Release` build (`AntigravityQuotaMonitor.app`, `codesign --verify --deep --strict`, `LSUIElement = 1`, `CFBundleDisplayName = "Antigravity Quota Monitor"`).
+- Verified full unit + UI test suite and `Release` build (`Antigravity Quota Monitor.app`, `codesign --verify --deep --strict`, `LSUIElement = 1`, `CFBundleDisplayName = "Antigravity Quota Monitor"`), and published GitHub Release `v1.0.0`.
 
 ---
 
 ## Technical Decisions
 
-1. **Explicit Pipe Cleanup:** Closing `stdoutPipe` and `stderrPipe` read handles immediately after `readDataToEndOfFile()` (and on launch errors) guarantees zero descriptor leaks across long-running menu bar polling sessions.
-2. **Privacy & Zero Raw Logging:** No conversation text, OAuth tokens, or raw CLI outputs are logged, cached on disk, or sent to custom endpoints.
-3. **Release Build Verification:** Validated `Release` configuration compilation (`wholemodule` Swift optimization), `AppIcon.icns` asset catalog compilation, bundle `Info.plist` agent configuration (`LSUIElement = 1`), and Apple Development code signature verification.
+1. **Product Name vs. Module Name Separation:** Setting `PRODUCT_NAME = "Antigravity Quota Monitor"` and `PRODUCT_MODULE_NAME = "AntigravityQuotaMonitor"` produces a user-friendly spaced `.app` bundle name in `/Applications` while keeping Swift module imports intact.
+2. **Explicit Pipe Cleanup:** Closing `stdoutPipe` and `stderrPipe` read handles immediately after `readDataToEndOfFile()` (and on launch errors) guarantees zero descriptor leaks across long-running menu bar polling sessions.
+3. **Privacy & Zero Raw Logging:** No conversation text, OAuth tokens, or raw CLI outputs are logged, cached on disk, or sent to custom endpoints.
+4. **Release Build Verification:** Validated `Release` configuration compilation (`wholemodule` Swift optimization), `AppIcon.icns` asset catalog compilation, bundle `Info.plist` agent configuration (`LSUIElement = 1`), and Apple Development code signature verification.
 
 ---
 
 ## Testing Results
 
 - **Unit Tests (`AntigravityQuotaMonitorTests`):** `35 passed, 0 failed` (9 Swift Testing suites), zero compiler warnings.
-- **UI Tests (`AntigravityQuotaMonitorUITests`):** `1 passed, 0 failed` (`testMenuBarAppLaunchesAndRelaunchesCleanly`, 3.12s).
+- **UI Tests (`AntigravityQuotaMonitorUITests`):** `1 passed, 0 failed` (`testMenuBarAppLaunchesAndRelaunchesCleanly`, 3.08s).
 - **Release Build (`xcodebuild build -configuration Release`):** Succeeded; `codesign --verify --deep --strict` passed (`CODESIGN_OK`).
 - **Privacy & Security Audit:** Zero raw logging, zero credential handling, zero direct network calls.
 
@@ -75,7 +78,7 @@
 
 ## Known Issues
 
-- None blocking v1.0. Runtime behavior depends on macOS Accessibility permissions and the local `agy` CLI remaining compatible with `-p "/usage" --output-format json`.
+- None blocking v1.0.0. Runtime behavior depends on macOS Accessibility permissions and the local `agy` CLI remaining compatible with `-p "/usage" --output-format json`.
 
 ---
 
@@ -83,4 +86,4 @@
 
 - **Repository:** `https://github.com/GorkemSay/antigravity-quota-monitor`
 - **Branch:** `main`
-- **Latest Commit:** Updated with `AppIcon` assets and README screenshots.
+- **Release:** `v1.0.0` (`Antigravity-Quota-Monitor-macOS.zip`)
