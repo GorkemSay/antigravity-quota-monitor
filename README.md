@@ -32,7 +32,9 @@ Antigravity Quota Monitor lives unobtrusively in the macOS menu bar (`LSUIElemen
 
 ## Screenshots
 
-Run `AntigravityQuotaMonitor` (`Cmd + R` in Xcode) to view the live menu bar indicator (`atom` icon + model badge and percentage) and expanded quota popover.
+| Menu Bar Indicator & Quota Popover | Inline Settings |
+|---|---|
+| ![Menu Bar Indicator and Quota Popover](docs/screenshots/menubar-popover.png) | ![Inline Settings View](docs/screenshots/settings-popover.png) |
 
 ## System Requirements
 

@@ -49,9 +49,10 @@
 ### Milestone 7 — Testing, Polish, and Release Preparation
 - Hardened `SystemCLIProcessRunner` to explicitly close stdout/stderr `FileHandle` descriptors after EOF and on launch failure to eliminate file-descriptor leakage.
 - Updated `AntigravityQuotaMonitorUITests/AntigravityQuotaMonitorUITests.swift` with `testMenuBarAppLaunchesAndRelaunchesCleanly()` verifying agent launch, termination, and clean relaunch.
+- Generated full macOS `AppIcon.appiconset` (`16x16` through `512x512@2x`) matching the menu bar `"atom"` emblem and installed the Release `.app` bundle to `/Applications/AntigravityQuotaMonitor.app`.
+- Rendered live SwiftUI screenshots (`docs/screenshots/menubar-popover.png` and `docs/screenshots/settings-popover.png`) and embedded them in `README.md`.
 - Audited all source files under `AntigravityQuotaMonitor/` (`print`, `NSLog`, `os_log`, `Logger`, `SecItem`, `URLSession`, HTTP/HTTPS) — zero matches (`CLEAN_PRIVACY_AUDIT`).
 - Verified full unit + UI test suite and `Release` build (`AntigravityQuotaMonitor.app`, `codesign --verify --deep --strict`, `LSUIElement = 1`, `CFBundleDisplayName = "Antigravity Quota Monitor"`).
-- Finalized `README.md` and `PROJECT_PROGRESS.md`.
 
 ---
 
@@ -59,7 +60,7 @@
 
 1. **Explicit Pipe Cleanup:** Closing `stdoutPipe` and `stderrPipe` read handles immediately after `readDataToEndOfFile()` (and on launch errors) guarantees zero descriptor leaks across long-running menu bar polling sessions.
 2. **Privacy & Zero Raw Logging:** No conversation text, OAuth tokens, or raw CLI outputs are logged, cached on disk, or sent to custom endpoints.
-3. **Release Build Verification:** Validated `Release` configuration compilation (`wholemodule` Swift optimization), bundle `Info.plist` agent configuration (`LSUIElement = 1`), and Apple Development code signature verification.
+3. **Release Build Verification:** Validated `Release` configuration compilation (`wholemodule` Swift optimization), `AppIcon.icns` asset catalog compilation, bundle `Info.plist` agent configuration (`LSUIElement = 1`), and Apple Development code signature verification.
 
 ---
 
@@ -82,4 +83,4 @@
 
 - **Repository:** `https://github.com/GorkemSay/antigravity-quota-monitor`
 - **Branch:** `main`
-- **Latest Commit:** Finalized upon Milestone 7 completion.
+- **Latest Commit:** Updated with `AppIcon` assets and README screenshots.
