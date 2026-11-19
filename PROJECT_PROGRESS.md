@@ -13,7 +13,7 @@
 
 ## Current Milestone
 
-**Milestone 7 — Testing, Polish, and Release Preparation** (Completed — `v1.0.0` Released)
+**Milestone 8 — New Gemini 4 Models & Orchestrator Support** (Completed)
 
 ---
 
@@ -56,6 +56,13 @@
 - Audited all source files under `AntigravityQuotaMonitor/` (`print`, `NSLog`, `os_log`, `Logger`, `SecItem`, `URLSession`, HTTP/HTTPS) — zero matches (`CLEAN_PRIVACY_AUDIT`).
 - Verified full unit + UI test suite and `Release` build (`Antigravity Quota Monitor.app`, `codesign --verify --deep --strict`, `LSUIElement = 1`, `CFBundleDisplayName = "Antigravity Quota Monitor"`), and published GitHub Release `v1.0.0`.
 
+### Milestone 8 — New Gemini 4 Models & Orchestrator Support
+- Analyzed updated Antigravity CLI (`agy 1.5.12`) model catalog (`agy models`) and live `/usage` output.
+- Added support in `DetectedModel.swift` for `Gemini 4 Neon` (`N`), `Gemini 4 Carbon` (`C`), and `Orchestrator` planner variants (`Orchestrator (Neon)` -> `ON`, `Orchestrator (Argon)` -> `OA`, `Orchestrator (Carbon)` -> `OC`), while preserving parenthetical planner names when trailing parentheses are not reasoning effort levels (`Low`, `Medium`, `High`, `XHigh`, `Max`, `Thinking`).
+- Updated `ModelQuotaMapper.swift` so `Orchestrator (Argon)` maps to the separate `Gemini 4 Argon` quota bucket while `Gemini 4 Neon`, `Orchestrator (Neon)`, `Gemini 4 Carbon`, and `Orchestrator (Carbon)` map to `Gemini Models`.
+- Added unit tests covering `Gemini 4 Neon (XHigh)`, `Gemini 4 Carbon (High)`, `Orchestrator (Neon)`, `Orchestrator (Argon)`, and `Orchestrator (Carbon)` in `XcodeModelDetectorTests.swift` and `ModelQuotaMapperTests.swift`.
+- Added a compact app logo (`docs/logo.png`) and updated `README.md` with the expanded model table, badges, effort tiers, and CLI notes.
+
 ---
 
 ## Technical Decisions
@@ -63,14 +70,13 @@
 1. **Product Name vs. Module Name Separation:** Setting `PRODUCT_NAME = "Antigravity Quota Monitor"` and `PRODUCT_MODULE_NAME = "AntigravityQuotaMonitor"` produces a user-friendly spaced `.app` bundle name in `/Applications` while keeping Swift module imports intact.
 2. **Explicit Pipe Cleanup:** Closing `stdoutPipe` and `stderrPipe` read handles immediately after `readDataToEndOfFile()` (and on launch errors) guarantees zero descriptor leaks across long-running menu bar polling sessions.
 3. **Privacy & Zero Raw Logging:** No conversation text, OAuth tokens, or raw CLI outputs are logged, cached on disk, or sent to custom endpoints.
-4. **Release Build Verification:** Validated `Release` configuration compilation (`wholemodule` Swift optimization), `AppIcon.icns` asset catalog compilation, bundle `Info.plist` agent configuration (`LSUIElement = 1`), and Apple Development code signature verification.
+4. **Effort vs. Planner Parenthetical Parsing:** `DetectedModel.parse` distinguishes trailing reasoning effort qualifiers (`(Low)`, `(Medium)`, `(High)`, `(XHigh)`, `(Thinking)`) from model planner qualifiers (`Orchestrator (Neon)`, `Orchestrator (Argon)`, `Orchestrator (Carbon)`) so planner identity is preserved for accurate quota group mapping and distinct menu bar abbreviations (`ON`, `OA`, `OC`).
 
 ---
 
 ## Testing Results
 
-- **Unit Tests (`AntigravityQuotaMonitorTests`):** `35 passed, 0 failed` (9 Swift Testing suites), zero compiler warnings.
-- **UI Tests (`AntigravityQuotaMonitorUITests`):** `1 passed, 0 failed` (`testMenuBarAppLaunchesAndRelaunchesCleanly`, 3.08s).
+- **Unit & UI Tests (`AntigravityQuotaMonitorTests` + `AntigravityQuotaMonitorUITests`):** `39 passed, 0 failed`, zero compiler warnings.
 - **Release Build (`xcodebuild build -configuration Release`):** Succeeded; `codesign --verify --deep --strict` passed (`CODESIGN_OK`).
 - **Privacy & Security Audit:** Zero raw logging, zero credential handling, zero direct network calls.
 
@@ -78,7 +84,7 @@
 
 ## Known Issues
 
-- None blocking v1.0.0. Runtime behavior depends on macOS Accessibility permissions and the local `agy` CLI remaining compatible with `-p "/usage" --output-format json`.
+- None blocking. Runtime behavior depends on macOS Accessibility permissions and the local `agy` CLI remaining compatible with `-p "/usage" --output-format json`.
 
 ---
 

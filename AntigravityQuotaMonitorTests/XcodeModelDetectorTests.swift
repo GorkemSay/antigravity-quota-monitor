@@ -80,6 +80,39 @@ struct DetectedModelTests {
     }
 
     @Test
+    func parsesNeonAndCarbonWithEffortLevelsIncludingXHigh() {
+        let neon = DetectedModel.parse(rawLabel: "Gemini 4 Neon (XHigh)")
+        #expect(neon?.rawLabel == "Gemini 4 Neon (XHigh)")
+        #expect(neon?.normalizedName == "Gemini 4 Neon")
+        #expect(neon?.effortLevel == "XHigh")
+        #expect(neon?.shortAbbreviation == "N")
+
+        let carbon = DetectedModel.parse(rawLabel: "Gemini 4 Carbon (High)")
+        #expect(carbon?.normalizedName == "Gemini 4 Carbon")
+        #expect(carbon?.effortLevel == "High")
+        #expect(carbon?.shortAbbreviation == "C")
+    }
+
+    @Test
+    func parsesOrchestratorPlannerVariantsWithoutLosingPlannerName() {
+        let orchestratorNeon = DetectedModel.parse(rawLabel: "Orchestrator (Neon)")
+        #expect(orchestratorNeon?.rawLabel == "Orchestrator (Neon)")
+        #expect(orchestratorNeon?.normalizedName == "Orchestrator (Neon)")
+        #expect(orchestratorNeon?.effortLevel == nil)
+        #expect(orchestratorNeon?.shortAbbreviation == "ON")
+
+        let orchestratorArgon = DetectedModel.parse(rawLabel: "Orchestrator (Argon)")
+        #expect(orchestratorArgon?.normalizedName == "Orchestrator (Argon)")
+        #expect(orchestratorArgon?.effortLevel == nil)
+        #expect(orchestratorArgon?.shortAbbreviation == "OA")
+
+        let orchestratorCarbon = DetectedModel.parse(rawLabel: "Orchestrator (Carbon)")
+        #expect(orchestratorCarbon?.normalizedName == "Orchestrator (Carbon)")
+        #expect(orchestratorCarbon?.effortLevel == nil)
+        #expect(orchestratorCarbon?.shortAbbreviation == "OC")
+    }
+
+    @Test
     func parsesArgonWithEffort() {
         let model = DetectedModel.parse(rawLabel: "Gemini 4 Argon (Medium)")
         #expect(model?.normalizedName == "Gemini 4 Argon")

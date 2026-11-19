@@ -10,19 +10,46 @@ nonisolated struct DetectedModel: Sendable, Equatable {
         let trimmed = rawLabel.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return nil }
 
-        guard let (baseName, effort) = splitTrailingParenthetical(from: trimmed) else {
+        if let (baseName, effort) = splitTrailingParenthetical(from: trimmed),
+           isEffortOrModeDescriptor(effort) {
+            let normalized = baseName.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !normalized.isEmpty else { return nil }
+
+            return DetectedModel(
+                rawLabel: trimmed,
+                normalizedName: normalized,
+                effortLevel: effort,
+                shortAbbreviation: deriveAbbreviation(for: normalized, rawLabel: trimmed)
+            )
+        }
+
+        // Reject labels that are purely a parenthetical like "(High)" with no model name
+        if trimmed.hasPrefix("(") && trimmed.hasSuffix(")") {
             return nil
         }
 
-        let normalized = baseName.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !normalized.isEmpty else { return nil }
-
         return DetectedModel(
             rawLabel: trimmed,
-            normalizedName: normalized,
-            effortLevel: effort,
-            shortAbbreviation: deriveAbbreviation(for: normalized)
+            normalizedName: trimmed,
+            effortLevel: nil,
+            shortAbbreviation: deriveAbbreviation(for: trimmed, rawLabel: trimmed)
         )
+    }
+
+    private static func isEffortOrModeDescriptor(_ candidate: String?) -> Bool {
+        guard let candidate else { return true }
+        let lower = candidate.lowercased()
+        let knownEfforts: Set<String> = [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max",
+            "thinking",
+            "fast",
+            "auto"
+        ]
+        return knownEfforts.contains(lower)
     }
 
     private static func splitTrailingParenthetical(from value: String) -> (String, String?)? {
@@ -53,10 +80,20 @@ nonisolated struct DetectedModel: Sendable, Equatable {
         return (prefix, candidateEffort)
     }
 
-    private static func deriveAbbreviation(for normalizedName: String) -> String {
+    private static func deriveAbbreviation(for normalizedName: String, rawLabel: String = "") -> String {
         let lower = normalizedName.lowercased()
+        let rawLower = rawLabel.lowercased()
+
+        if lower.contains("orchestrator") {
+            if lower.contains("neon") || rawLower.contains("neon") { return "ON" }
+            if lower.contains("argon") || rawLower.contains("argon") { return "OA" }
+            if lower.contains("carbon") || rawLower.contains("carbon") { return "OC" }
+            return "OR"
+        }
+        if lower.contains("neon") { return "N" }
         if lower.contains("hydrogen") { return "H" }
         if lower.contains("argon") { return "A" }
+        if lower.contains("carbon") { return "C" }
         if lower.contains("flash") { return "F" }
         if lower.contains("opus") { return "O" }
         if lower.contains("sonnet") { return "S" }

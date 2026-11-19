@@ -42,7 +42,7 @@ struct QuotaCLIResponseParserTests {
           "groups": [
             {
               "name": "Gemini Models",
-              "description": "Models within this group: Gemini 4 Hydrogen, Gemini 3.8 Flash",
+              "description": "Models within this group: Gemini 4 Neon, Gemini 4 Hydrogen, Orchestrator (Neon), Gemini 3.8 Flash",
               "buckets": [
                 {
                   "id": "gemini-weekly",

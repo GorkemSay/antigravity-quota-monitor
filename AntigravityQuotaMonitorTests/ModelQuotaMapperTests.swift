@@ -10,7 +10,7 @@ struct ModelQuotaMapperTests {
         groups: [
             QuotaGroup(
                 name: "Gemini Models",
-                description: "Models within this group: Gemini 4 Hydrogen, Gemini 3.8 Flash",
+                description: "Models within this group: Gemini 4 Neon, Gemini 4 Hydrogen, Orchestrator (Neon), Gemini 3.8 Flash",
                 buckets: [
                     QuotaBucket(
                         id: "gemini-weekly",
@@ -109,6 +109,36 @@ struct ModelQuotaMapperTests {
         #expect(group.name == "Gemini 4 Argon")
         #expect(bucket.id == "gemini-argon-wtu-weekly")
         #expect(bucket.remainingPercent == 99)
+
+        let orchestratorArgon = try #require(DetectedModel.parse(rawLabel: "Orchestrator (Argon)"))
+        let orchestratorArgonMapping = ModelQuotaMapper.map(model: orchestratorArgon, in: Self.sampleSnapshot)
+        guard case .matched(let oaGroup, let oaBucket) = orchestratorArgonMapping else {
+            Issue.record("Expected matched group for Orchestrator (Argon)")
+            return
+        }
+        #expect(oaGroup.name == "Gemini 4 Argon")
+        #expect(oaBucket.id == "gemini-argon-wtu-weekly")
+    }
+
+    @Test
+    func mapsNeonCarbonAndOrchestratorVariantsCorrectly() throws {
+        for label in [
+            "Gemini 4 Neon (High)",
+            "Gemini 4 Neon (XHigh)",
+            "Orchestrator (Neon)",
+            "Gemini 4 Carbon (High)",
+            "Orchestrator (Carbon)"
+        ] {
+            let model = try #require(DetectedModel.parse(rawLabel: label))
+            let mapping = ModelQuotaMapper.map(model: model, in: Self.sampleSnapshot)
+            guard case .matched(let group, let bucket) = mapping else {
+                Issue.record("Expected matched group for \(label)")
+                return
+            }
+            #expect(group.name == "Gemini Models")
+            #expect(bucket.id == "gemini-5h")
+            #expect(bucket.remainingPercent == 90)
+        }
     }
 
     @Test

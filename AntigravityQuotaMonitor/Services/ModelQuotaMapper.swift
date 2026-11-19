@@ -33,7 +33,12 @@ nonisolated struct ModelQuotaMapper: Sendable {
             return .unmatched(model: model, availableGroupNames: groups.map(\.name))
         }
 
-        if normalizedModel.contains("hydrogen") || normalizedModel.contains("flash") || normalizedModel.contains("gemini") {
+        if normalizedModel.contains("neon")
+            || normalizedModel.contains("hydrogen")
+            || normalizedModel.contains("carbon")
+            || normalizedModel.contains("orchestrator")
+            || normalizedModel.contains("flash")
+            || normalizedModel.contains("gemini") {
             if let geminiGroup = groups.first(where: {
                 let name = normalize($0.name)
                 return name.contains("gemini") && !name.contains("argon")

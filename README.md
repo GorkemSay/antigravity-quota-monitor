@@ -1,14 +1,15 @@
-# Antigravity Quota Monitor
+# <img src="docs/logo.png" alt="Antigravity Quota Monitor Logo" width="40" align="absmiddle" /> Antigravity Quota Monitor
 
 A lightweight native macOS menu bar utility written in Swift and SwiftUI that monitors the remaining usage quota for the Google Antigravity AI model currently selected in Xcode.
 
 ## Overview
 
-Antigravity Quota Monitor lives unobtrusively in the macOS menu bar (`LSUIElement`), detects which Antigravity AI model is selected in Xcode's built-in coding assistant, queries usage data through the official Antigravity CLI (`agy`), and displays the most restrictive remaining quota percentage at a glance (for example, `H 86%` or `A 99%`).
+Antigravity Quota Monitor lives unobtrusively in the macOS menu bar (`LSUIElement`), detects which Antigravity AI model is selected in Xcode's built-in coding assistant, queries usage data through the official Antigravity CLI (`agy`), and displays the most restrictive remaining quota percentage at a glance (for example, `N 75%`, `H 86%`, `ON 75%`, or `A 97%`).
 
 ## Features
 
-- **At-a-Glance Menu Bar Indicator:** Displays the orbital icon (`atom`) alongside the active model's abbreviation and lowest remaining quota percentage (e.g., `H 86%`, `A 99%`) with no Dock icon or standalone window.
+- **At-a-Glance Menu Bar Indicator:** Displays the orbital icon (`atom`) alongside the active model's abbreviation and lowest remaining quota percentage (e.g., `N 75%`, `H 86%`, `ON 75%`, `A 97%`) with no Dock icon or standalone window.
+- **Full Model & Effort Support:** Recognizes the expanded Gemini 4 family (`Gemini 4 Neon`, `Gemini 4 Hydrogen`, `Gemini 4 Argon`, `Gemini 4 Carbon`), multi-step `Orchestrator` planner variants (`Orchestrator (Neon)`, `Orchestrator (Argon)`, `Orchestrator (Carbon)`), `Gemini 3.8 Flash`, and third-party models (`Claude Opus 5.5`, `Claude Sonnet 5.5`, `GPT-OSS 120B`) across all reasoning effort tiers (`Low`, `Medium`, `High`, `XHigh`, `Thinking`).
 - **Detailed Quota Popover:**
   - Active Xcode model label, matched quota group, and color-coded limiting percentage
   - 5-hour and weekly quota progress bars with local-timezone reset timestamps and relative countdowns
@@ -92,7 +93,7 @@ Because macOS GUI applications launched from Finder do not inherit interactive s
 
 ## How It Works
 
-1. **Xcode Model Detection (`XcodeModelDetector`):** Locates running Xcode instances via `NSRunningApplication`, traverses Xcode's window Accessibility hierarchy (`AXUIElement`), and parses the active model selector label into a structured `DetectedModel`.
+1. **Xcode Model Detection (`XcodeModelDetector`):** Locates running Xcode instances via `NSRunningApplication`, traverses Xcode's window Accessibility hierarchy (`AXUIElement`), and parses the active model selector label into a structured `DetectedModel` (distinguishing effort levels like `(High)` or `(XHigh)` from planner qualifiers like `Orchestrator (Neon)` or `Orchestrator (Argon)`).
 2. **Quota Retrieval (`AntigravityQuotaProvider`):** Runs `agy -p "/usage" --output-format json` in an isolated subprocess with timeout, handle cleanup, and task coalescing, then parses the JSON response into `QuotaSnapshot`, `QuotaGroup`, and `QuotaBucket` models.
 3. **Matching & Presentation (`ModelQuotaMapper`, `QuotaManager`, `PreferencesStore`):** Matches the detected model to its quota group, manages background refresh intervals and stale-data handling, and renders the SwiftUI `MenuBarExtra` interface.
 
@@ -100,14 +101,19 @@ Because macOS GUI applications launched from Finder do not inherit interactive s
 
 Based on Antigravity CLI usage output (subject to account configuration and future CLI updates):
 
-| Model | Quota Group | Quota Windows |
-|---|---|---|
-| Gemini 4 Hydrogen | Gemini Models | Weekly, 5-hour |
-| Gemini 3.8 Flash | Gemini Models | Weekly, 5-hour |
-| Gemini 4 Argon | Gemini 4 Argon | Weekly |
-| Claude Opus 5.5 | Claude and GPT models | Weekly, 5-hour |
-| Claude Sonnet 5.5 | Claude and GPT models | Weekly, 5-hour |
-| GPT-OSS 120B | Claude and GPT models | Weekly, 5-hour |
+| Model | Menu Bar Badge | Effort / Planner Variants | Quota Group | Quota Windows |
+|---|---|---|---|---|
+| Gemini 4 Neon | `N` | Low, Medium, High, XHigh | Gemini Models | Weekly, 5-hour |
+| Gemini 4 Hydrogen | `H` | Low, Medium, High, XHigh | Gemini Models | Weekly, 5-hour |
+| Orchestrator (Neon) | `ON` | Neon Planner | Gemini Models | Weekly, 5-hour |
+| Gemini 4 Carbon | `C` | Low, Medium, High | Gemini Models | Weekly, 5-hour |
+| Orchestrator (Carbon) | `OC` | Carbon Planner | Gemini Models | Weekly, 5-hour |
+| Gemini 3.8 Flash | `F` | Low, Medium, High | Gemini Models | Weekly, 5-hour |
+| Gemini 4 Argon | `A` | Low, Medium, High | Gemini 4 Argon | Weekly |
+| Orchestrator (Argon) | `OA` | Argon Planner | Gemini 4 Argon | Weekly |
+| Claude Opus 5.5 | `O` | Low, Medium, High, Thinking | Claude and GPT models | Weekly, 5-hour |
+| Claude Sonnet 5.5 | `S` | Low, Medium, High | Claude and GPT models | Weekly, 5-hour |
+| GPT-OSS 120B | `G` | Medium | Claude and GPT models | Weekly, 5-hour |
 
 ## Why This Approach?
 
@@ -185,6 +191,7 @@ xcodebuild test \
 
 - Active model detection requires macOS Accessibility permission to be granted to the running application bundle.
 - **Launch at Login** (`SMAppService.mainApp`) requires the app to reside in a standard location such as `/Applications`.
+- Quota reporting requires an account-authenticated Antigravity CLI session (connections using only `GEMINI_API_KEY` do not expose an account quota bucket via `/usage`).
 - Depends on the Antigravity CLI `agy -p "/usage" --output-format json` contract and Xcode's Accessibility tree labels remaining compatible across future updates.
 
 ## License
