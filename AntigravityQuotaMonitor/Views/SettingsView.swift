@@ -3,6 +3,7 @@ import SwiftUI
 struct SettingsView: View {
     @Bindable var preferences: PreferencesStore
     let quotaManager: QuotaManager
+    var updateManager = AppUpdateManager()
     let onDone: () -> Void
 
     @State private var cliPathDraft: String = ""
@@ -84,28 +85,101 @@ struct SettingsView: View {
 
             Divider()
 
-            HStack {
-                Text("Accessibility")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-
-                Spacer()
-
-                if quotaManager.modelDetection == .permissionRequired {
-                    Button("Grant Access") {
-                        quotaManager.requestAccessibilityPermission()
-                    }
-                    .controlSize(.small)
-                } else {
-                    Label("Configured", systemImage: "checkmark.circle.fill")
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text("Accessibility")
                         .font(.caption)
-                        .foregroundStyle(.green)
+                        .foregroundStyle(.secondary)
+
+                    Spacer()
+
+                    if quotaManager.modelDetection == .permissionRequired {
+                        Button("Grant Access") {
+                            quotaManager.requestAccessibilityPermission()
+                        }
+                        .controlSize(.small)
+                    } else {
+                        Label("Configured", systemImage: "checkmark.circle.fill")
+                            .font(.caption)
+                            .foregroundStyle(.green)
+                    }
                 }
+
+                updateSection
             }
         }
         .onAppear {
             cliPathDraft = preferences.customCLIPath
             preferences.refreshLaunchAtLoginStatus()
+        }
+    }
+
+    @ViewBuilder
+    private var updateSection: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 6) {
+                Text("Updates (\(updateManager.currentDisplayVersion))")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                Spacer()
+
+                switch updateManager.state {
+                case .idle:
+                    Button("Check for Updates") {
+                        Task { await updateManager.checkForUpdates() }
+                    }
+                    .controlSize(.small)
+
+                case .checking:
+                    HStack(spacing: 4) {
+                        ProgressView()
+                            .controlSize(.small)
+                        Text("Checking…")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                case .upToDate(let version):
+                    Label("Up to date (\(version))", systemImage: "checkmark.circle.fill")
+                        .font(.caption)
+                        .foregroundStyle(.green)
+
+                case .updateAvailable(let release):
+                    HStack(spacing: 6) {
+                        Text("\(release.displayTag) available!")
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(.orange)
+
+                        Button("Update") {
+                            Task { await updateManager.performUpdate(to: release) }
+                        }
+                        .controlSize(.small)
+                    }
+
+                case .updating(let status):
+                    HStack(spacing: 4) {
+                        ProgressView()
+                            .controlSize(.small)
+                        Text(status)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                case .failed:
+                    Button("Check for Updates") {
+                        Task { await updateManager.checkForUpdates() }
+                    }
+                    .controlSize(.small)
+                }
+            }
+
+            if case .failed(let message) = updateManager.state {
+                Text(message)
+                    .font(.caption2)
+                    .foregroundStyle(.orange)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
     }
 

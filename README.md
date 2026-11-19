@@ -25,11 +25,12 @@ Antigravity Quota Monitor lives unobtrusively in the macOS menu bar (`LSUIElemen
   - Lightweight active Xcode model tracking every 15 seconds plus immediate sync when opening the popover
   - Preserves the last valid snapshot with a `Stale` indicator if a temporary CLI refresh fails
   - Coalesces concurrent refresh requests so duplicate `agy` subprocesses never spawn
-- **Native Inline Settings:**
+- **Native Inline Settings & One-Click Self-Updater:**
   - Refresh interval selector (2–5 min) saved in `UserDefaults`
   - Optional custom `agy` CLI executable path override
   - Optional **Launch at Login** toggle via Apple's `ServiceManagement` (`SMAppService.mainApp`)
   - Live Accessibility permission status indicator
+  - Built-in **Check for Updates** button that compares your installed version against the latest GitHub Release (`Up to date (v1.2.0)` with a green checkmark, or `vX.Y.Z available!` with a one-click **Update** button that automatically downloads, replaces, and relaunches the app)
 
 ## Screenshots
 
@@ -81,16 +82,18 @@ Antigravity Quota Monitor lives unobtrusively in the macOS menu bar (`LSUIElemen
 
 ### Updating an Existing Installation
 
-1. Click the **atom** icon in the menu bar and choose **Quit** (`Cmd + Q`).
-2. Download the latest `Antigravity-Quota-Monitor-macOS.zip` from [GitHub Releases](https://github.com/GorkemSay/antigravity-quota-monitor/releases/latest), extract it, and drag **Antigravity Quota Monitor.app** to `/Applications` (choose **Replace** when prompted) — or re-run the `xcodebuild` command above if building from source.
-3. Relaunch **Antigravity Quota Monitor** from `/Applications`.
-   > **Accessibility Note:** If macOS still treats the replaced binary as untrusted for Accessibility, open **System Settings > Privacy & Security > Accessibility**, toggle **Antigravity Quota Monitor** off and back on (or remove it with `-` and re-add it), and click **Refresh** in the app.
+- **In-App Update (v1.2.0+):** Click the **gear** icon (`Settings`) in the top-right corner of the popover, click **Check for Updates**, and if a newer version is available, click **Update**. The app will download the latest release, replace the application bundle in `/Applications`, and relaunch automatically.
+- **Manual Update (from v1.0.0 / v1.1.0):**
+  1. Click the **atom** icon in the menu bar and choose **Quit** (`Cmd + Q`).
+  2. Download the latest `Antigravity-Quota-Monitor-macOS.zip` from [GitHub Releases](https://github.com/GorkemSay/antigravity-quota-monitor/releases/latest), extract it, and drag **Antigravity Quota Monitor.app** to `/Applications` (choose **Replace** when prompted) — or re-run the `xcodebuild` command above if building from source.
+  3. Relaunch **Antigravity Quota Monitor** from `/Applications`.
+     > **Accessibility Note:** If macOS still treats the replaced binary as untrusted for Accessibility, open **System Settings > Privacy & Security > Accessibility**, toggle **Antigravity Quota Monitor** off and back on (or remove it with `-` and re-add it), and click **Refresh** in the app.
 
 ## Permissions and Privacy
 
 - **Accessibility Permission:** Used strictly to inspect the selected model label in Xcode's model picker control (`AXMenuButton`). The application does not read source code, conversation history, or unrelated application data.
-- **Local Execution (No App Sandbox):** App Sandbox is disabled on the macOS target so the app can query Accessibility attributes from Xcode and run the locally installed `agy` CLI executable via `Process`.
-- **Credentials & Logging:** The application does not read, store, or extract OAuth tokens or authentication credentials, makes no direct network calls, and does not log raw CLI output.
+- **Local Execution (No App Sandbox):** App Sandbox is disabled on the macOS target so the app can query Accessibility attributes from Xcode, run the locally installed `agy` CLI executable via `Process`, and perform user-initiated in-app updates.
+- **Credentials & Logging:** The application does not read, store, or extract OAuth tokens or authentication credentials and does not log raw CLI output. Network calls are only made to GitHub's official Releases API (`api.github.com`) when you explicitly click **Check for Updates** / **Update** in Settings.
 
 ## Antigravity CLI Requirements
 
@@ -106,7 +109,7 @@ Because macOS GUI applications launched from Finder do not inherit interactive s
 
 1. **Xcode Model Detection (`XcodeModelDetector`):** Locates running Xcode instances via `NSRunningApplication`, traverses Xcode's window Accessibility hierarchy (`AXUIElement`), and parses the active model selector label into a structured `DetectedModel` (distinguishing effort levels like `(High)` or `(XHigh)` from planner qualifiers like `Orchestrator (Neon)` or `Orchestrator (Argon)`).
 2. **Quota Retrieval (`AntigravityQuotaProvider`):** Runs `agy -p "/usage" --output-format json` in an isolated subprocess with timeout, handle cleanup, and task coalescing, then parses the JSON response into `QuotaSnapshot`, `QuotaGroup`, and `QuotaBucket` models.
-3. **Matching & Presentation (`ModelQuotaMapper`, `QuotaManager`, `PreferencesStore`):** Matches the detected model to its quota group, manages background refresh intervals and stale-data handling, and renders the SwiftUI `MenuBarExtra` interface.
+3. **Matching & Presentation (`ModelQuotaMapper`, `QuotaManager`, `PreferencesStore`, `AppUpdateManager`):** Matches the detected model to its quota group, manages background refresh intervals and stale-data handling, handles on-demand GitHub Release updates, and renders the SwiftUI `MenuBarExtra` interface.
 
 ## Supported Model Groups
 

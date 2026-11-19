@@ -5,6 +5,7 @@ struct MenuBarContentView: View {
     let quotaManager: QuotaManager
     let preferences: PreferencesStore
 
+    @State private var updateManager = AppUpdateManager()
     @State private var showingSettings = false
 
     var body: some View {
@@ -13,6 +14,7 @@ struct MenuBarContentView: View {
                 SettingsView(
                     preferences: preferences,
                     quotaManager: quotaManager,
+                    updateManager: updateManager,
                     onDone: { showingSettings = false }
                 )
             } else {
