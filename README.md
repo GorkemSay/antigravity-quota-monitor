@@ -1,4 +1,8 @@
-# <img src="docs/logo.png" alt="Antigravity Quota Monitor Logo" width="40" align="absmiddle" /> Antigravity Quota Monitor
+<p align="center">
+  <img src="docs/logo.png" alt="Antigravity Quota Monitor Logo" width="128" height="128" />
+</p>
+
+# Antigravity Quota Monitor
 
 A lightweight native macOS menu bar utility written in Swift and SwiftUI that monitors the remaining usage quota for the Google Antigravity AI model currently selected in Xcode.
 
@@ -74,6 +78,13 @@ Antigravity Quota Monitor lives unobtrusively in the macOS menu bar (`LSUIElemen
    ```
    Alternatively, open `AntigravityQuotaMonitor.xcodeproj` in Xcode, select the **AntigravityQuotaMonitor** scheme, and press `Cmd + R`.
 3. Grant Accessibility permission to **Antigravity Quota Monitor** when prompted.
+
+### Updating an Existing Installation
+
+1. Click the **atom** icon in the menu bar and choose **Quit** (`Cmd + Q`).
+2. Download the latest `Antigravity-Quota-Monitor-macOS.zip` from [GitHub Releases](https://github.com/GorkemSay/antigravity-quota-monitor/releases/latest), extract it, and drag **Antigravity Quota Monitor.app** to `/Applications` (choose **Replace** when prompted) — or re-run the `xcodebuild` command above if building from source.
+3. Relaunch **Antigravity Quota Monitor** from `/Applications`.
+   > **Accessibility Note:** If macOS still treats the replaced binary as untrusted for Accessibility, open **System Settings > Privacy & Security > Accessibility**, toggle **Antigravity Quota Monitor** off and back on (or remove it with `-` and re-add it), and click **Refresh** in the app.
 
 ## Permissions and Privacy
 
