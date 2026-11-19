@@ -7,13 +7,13 @@
 - **Repository:** `https://github.com/GorkemSay/antigravity-quota-monitor` (Public)
 - **License:** MIT (`LICENSE`)
 - **Platform:** macOS 15.0+ (verified on macOS 26.7.2, Xcode 27.2, Swift 6.4.2)
-- **Architecture:** Modular SwiftUI (`MenuBarExtra`) + isolated domain services (`XcodeModelDetector`, `AntigravityQuotaProvider`, `ModelQuotaMapper`, `QuotaManager`, `PreferencesStore`)
+- **Architecture:** Modular SwiftUI (`MenuBarExtra`) + isolated domain services (`XcodeModelDetector`, `AntigravityQuotaProvider`, `ModelQuotaMapper`, `QuotaManager`, `PreferencesStore`, `AppUpdateManager`)
 
 ---
 
 ## Current Milestone
 
-**Milestone 8 — New Gemini 4 Models & Orchestrator Support** (Completed)
+**Milestone 9 — In-App Self-Updater, Stability Hardening & v1.2.0 Release** (Completed)
 
 ---
 
@@ -53,8 +53,8 @@
 - Updated `PRODUCT_NAME` to `"Antigravity Quota Monitor"` (while preserving `PRODUCT_MODULE_NAME = "AntigravityQuotaMonitor"`) so the bundle installs cleanly as `/Applications/Antigravity Quota Monitor.app`.
 - Updated `QuotaBucketRowView` with a pure SwiftUI `QuotaLinearProgressStyle` and `MenuBarContentView` gear button with `.buttonStyle(.plain)`, and re-rendered clean Retina screenshots (`docs/screenshots/menubar-popover.png` and `docs/screenshots/settings-popover.png`).
 - Polished `README.md` for end users (removed internal roadmap, added clear Download & Build installation instructions).
-- Audited all source files under `AntigravityQuotaMonitor/` (`print`, `NSLog`, `os_log`, `Logger`, `SecItem`, `URLSession`, HTTP/HTTPS) — zero matches (`CLEAN_PRIVACY_AUDIT`).
-- Verified full unit + UI test suite and `Release` build (`Antigravity Quota Monitor.app`, `codesign --verify --deep --strict`, `LSUIElement = 1`, `CFBundleDisplayName = "Antigravity Quota Monitor"`), and published GitHub Release `v1.0.0`.
+- Audited all source files under `AntigravityQuotaMonitor/` — zero raw logging or credential handling.
+- Verified full unit + UI test suite and `Release` build, and published GitHub Release `v1.0.0`.
 
 ### Milestone 8 — New Gemini 4 Models & Orchestrator Support
 - Analyzed updated Antigravity CLI (`agy 1.5.12`) model catalog (`agy models`) and live `/usage` output.
@@ -62,6 +62,14 @@
 - Updated `ModelQuotaMapper.swift` so `Orchestrator (Argon)` maps to the separate `Gemini 4 Argon` quota bucket while `Gemini 4 Neon`, `Orchestrator (Neon)`, `Gemini 4 Carbon`, and `Orchestrator (Carbon)` map to `Gemini Models`.
 - Added unit tests covering `Gemini 4 Neon (XHigh)`, `Gemini 4 Carbon (High)`, `Orchestrator (Neon)`, `Orchestrator (Argon)`, and `Orchestrator (Carbon)` in `XcodeModelDetectorTests.swift` and `ModelQuotaMapperTests.swift`.
 - Added a compact app logo (`docs/logo.png`) and updated `README.md` with the expanded model table, badges, effort tiers, and CLI notes.
+
+### Milestone 9 — In-App Self-Updater, Stability Hardening & v1.2.0 Release
+- Implemented `AppUpdateManager.swift` (`SemanticVersion`, `GitHubReleaseInfo`, `SystemAppUpdateNetworkClient`, `SystemAppUpdateInstaller`) for checking the latest GitHub release and performing one-click `.zip` download, `ditto` extraction, `xattr -cr` quarantine cleanup, bundle replacement, and app relaunch.
+- Integrated `Check for Updates` / `Update` controls into `SettingsView.swift` and `MenuBarContentView.swift`, resetting transient update state when leaving Settings (`Done` / `onAppear` / `onDisappear`).
+- Added unit tests in `AppUpdateManagerTests.swift` covering semantic version comparison, up-to-date status, available update installation flow, and network/extraction error handling.
+- Guarded background polling in `AntigravityQuotaMonitorApp.init()` when running inside the unit test host (`XCTestConfigurationFilePath`) to prevent live background CLI/Accessibility polling during unit test execution.
+- Updated `last-upgrade` in `AntigravityQuotaMonitor.xcodeproj/project.xcproj` to `27.2` to clear Xcode's `"Update to recommended settings"` project warning.
+- Bumped version to `v1.2.0` (`MARKETING_VERSION = 1.2.0`, `CURRENT_PROJECT_VERSION = 3`), refreshed documentation screenshots, installed `/Applications/Antigravity Quota Monitor.app`, and published GitHub Release `v1.2.0`.
 
 ---
 
@@ -71,14 +79,15 @@
 2. **Explicit Pipe Cleanup:** Closing `stdoutPipe` and `stderrPipe` read handles immediately after `readDataToEndOfFile()` (and on launch errors) guarantees zero descriptor leaks across long-running menu bar polling sessions.
 3. **Privacy & Zero Raw Logging:** No conversation text, OAuth tokens, or raw CLI outputs are logged, cached on disk, or sent to custom endpoints.
 4. **Effort vs. Planner Parenthetical Parsing:** `DetectedModel.parse` distinguishes trailing reasoning effort qualifiers (`(Low)`, `(Medium)`, `(High)`, `(XHigh)`, `(Thinking)`) from model planner qualifiers (`Orchestrator (Neon)`, `Orchestrator (Argon)`, `Orchestrator (Carbon)`) so planner identity is preserved for accurate quota group mapping and distinct menu bar abbreviations (`ON`, `OA`, `OC`).
+5. **Detached Shell Swap for In-App Updates:** `SystemAppUpdateInstaller` extracts the downloaded release archive into a temporary staging directory, verifies the `.app` bundle, clears quarantine attributes, spawns a detached `/bin/sh` helper that waits for the current PID to terminate before replacing the app bundle via `ditto` and relaunching via `open -n`, and then terminates the running instance cleanly.
 
 ---
 
 ## Testing Results
 
-- **Unit & UI Tests (`AntigravityQuotaMonitorTests` + `AntigravityQuotaMonitorUITests`):** `39 passed, 0 failed`, zero compiler warnings.
+- **Unit & UI Tests (`AntigravityQuotaMonitorTests` + `AntigravityQuotaMonitorUITests`):** `43 passed, 0 failed`, zero compiler or navigator warnings.
 - **Release Build (`xcodebuild build -configuration Release`):** Succeeded; `codesign --verify --deep --strict` passed (`CODESIGN_OK`).
-- **Privacy & Security Audit:** Zero raw logging, zero credential handling, zero direct network calls.
+- **Privacy & Security Audit:** Zero raw logging, zero credential handling, only public read-only GitHub Releases API requests when user clicks `Check for Updates`.
 
 ---
 
@@ -92,4 +101,4 @@
 
 - **Repository:** `https://github.com/GorkemSay/antigravity-quota-monitor`
 - **Branch:** `main`
-- **Release:** `v1.0.0` (`Antigravity-Quota-Monitor-macOS.zip`)
+- **Release:** `v1.2.0` (`Antigravity-Quota-Monitor-macOS.zip`)

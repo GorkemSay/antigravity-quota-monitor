@@ -3,7 +3,7 @@ import SwiftUI
 struct SettingsView: View {
     @Bindable var preferences: PreferencesStore
     let quotaManager: QuotaManager
-    var updateManager = AppUpdateManager()
+    let updateManager: AppUpdateManager
     let onDone: () -> Void
 
     @State private var cliPathDraft: String = ""

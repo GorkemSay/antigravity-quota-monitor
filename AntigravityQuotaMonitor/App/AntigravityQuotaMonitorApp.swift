@@ -13,10 +13,13 @@ struct AntigravityQuotaMonitorApp: App {
         _preferences = State(initialValue: prefs)
         _quotaManager = State(initialValue: manager)
 
-        Task { @MainActor in
-            await manager.updateCustomCLIPath(prefs.normalizedCustomCLIPath)
-            await manager.refreshAll()
-            manager.startBackgroundPolling()
+        let isRunningUnitTests = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+        if !isRunningUnitTests {
+            Task { @MainActor in
+                await manager.updateCustomCLIPath(prefs.normalizedCustomCLIPath)
+                await manager.refreshAll()
+                manager.startBackgroundPolling()
+            }
         }
     }
 
