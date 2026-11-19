@@ -16,6 +16,7 @@ struct SettingsView: View {
                 Spacer()
                 Button("Done") {
                     applyCLIPath()
+                    updateManager.resetState()
                     onDone()
                 }
                 .controlSize(.small)
@@ -111,6 +112,10 @@ struct SettingsView: View {
         .onAppear {
             cliPathDraft = preferences.customCLIPath
             preferences.refreshLaunchAtLoginStatus()
+            updateManager.resetState()
+        }
+        .onDisappear {
+            updateManager.resetState()
         }
     }
 

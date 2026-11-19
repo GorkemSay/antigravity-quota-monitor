@@ -327,6 +327,13 @@ final class AppUpdateManager {
         "v\(currentVersion)"
     }
 
+    func resetState() {
+        if case .updating = state {
+            return
+        }
+        state = .idle
+    }
+
     func checkForUpdates() async {
         switch state {
         case .checking, .updating:

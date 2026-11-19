@@ -94,6 +94,12 @@ struct AppUpdateManagerTests {
 
         await manager.checkForUpdates()
         #expect(manager.state == .upToDate(version: "v1.1.0"))
+
+        manager.resetState()
+        #expect(manager.state == .idle)
+
+        await manager.checkForUpdates()
+        #expect(manager.state == .upToDate(version: "v1.1.0"))
     }
 
     @Test
