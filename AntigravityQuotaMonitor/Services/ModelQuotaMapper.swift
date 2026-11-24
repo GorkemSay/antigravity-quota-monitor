@@ -26,27 +26,8 @@ nonisolated struct ModelQuotaMapper: Sendable {
         }
 
         // 3. Family/model-specific fallback rules when description is absent or changed
-        if normalizedModel.contains("argon") {
-            if let argonGroup = groups.first(where: { normalize($0.name).contains("argon") }) {
-                return result(for: argonGroup)
-            }
-            return .unmatched(model: model, availableGroupNames: groups.map(\.name))
-        }
-
-        if normalizedModel.contains("neon")
-            || normalizedModel.contains("hydrogen")
-            || normalizedModel.contains("carbon")
-            || normalizedModel.contains("orchestrator")
-            || normalizedModel.contains("flash")
-            || normalizedModel.contains("gemini") {
-            if let geminiGroup = groups.first(where: {
-                let name = normalize($0.name)
-                return name.contains("gemini") && !name.contains("argon")
-            }) {
-                return result(for: geminiGroup)
-            }
-        }
-
+        // Check third-party planners/models before generic "orchestrator" so
+        // Orchestrator (Claude Opus 5.5) maps to the Claude/GPT pool instead of Gemini.
         if normalizedModel.contains("claude")
             || normalizedModel.contains("opus")
             || normalizedModel.contains("sonnet")
@@ -56,6 +37,28 @@ nonisolated struct ModelQuotaMapper: Sendable {
                 return name.contains("claude") || name.contains("gpt")
             }) {
                 return result(for: thirdPartyGroup)
+            }
+        }
+
+        // Preserve backward compatibility if an older CLI/plan still exposes a separate
+        // Argon group; otherwise fall through to the unified Gemini Models group.
+        if normalizedModel.contains("argon"),
+           let argonGroup = groups.first(where: { normalize($0.name).contains("argon") }) {
+            return result(for: argonGroup)
+        }
+
+        if normalizedModel.contains("neon")
+            || normalizedModel.contains("carbon")
+            || normalizedModel.contains("argon")
+            || normalizedModel.contains("hydrogen")
+            || normalizedModel.contains("orchestrator")
+            || normalizedModel.contains("flash")
+            || normalizedModel.contains("gemini") {
+            if let geminiGroup = groups.first(where: {
+                let name = normalize($0.name)
+                return name.contains("gemini") && !name.contains("argon")
+            }) {
+                return result(for: geminiGroup)
             }
         }
 

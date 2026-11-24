@@ -8,16 +8,16 @@ A lightweight native macOS menu bar utility written in Swift and SwiftUI that mo
 
 ## Overview
 
-Antigravity Quota Monitor lives unobtrusively in the macOS menu bar (`LSUIElement`), detects which Antigravity AI model is selected in Xcode's built-in coding assistant, queries usage data through the official Antigravity CLI (`agy`), and displays the most restrictive remaining quota percentage at a glance (for example, `N 75%`, `H 86%`, `ON 75%`, or `A 97%`).
+Antigravity Quota Monitor lives unobtrusively in the macOS menu bar (`LSUIElement`), detects which Antigravity AI model is selected in Xcode's built-in coding assistant, queries usage data through the official Antigravity CLI (`agy`), and displays the most restrictive remaining quota percentage at a glance (for example, `N 75%`, `C 75%`, `H 86%`, `ON 75%`, or `OO 85%`).
 
 ## Features
 
-- **At-a-Glance Menu Bar Indicator:** Displays the orbital icon (`atom`) alongside the active model's abbreviation and lowest remaining quota percentage (e.g., `N 75%`, `H 86%`, `ON 75%`, `A 97%`) with no Dock icon or standalone window.
-- **Full Model & Effort Support:** Recognizes the expanded Gemini 4 family (`Gemini 4 Neon`, `Gemini 4 Hydrogen`, `Gemini 4 Argon`, `Gemini 4 Carbon`), multi-step `Orchestrator` planner variants (`Orchestrator (Neon)`, `Orchestrator (Argon)`, `Orchestrator (Carbon)`), `Gemini 3.8 Flash`, and third-party models (`Claude Opus 5.5`, `Claude Sonnet 5.5`, `GPT-OSS 120B`) across all reasoning effort tiers (`Low`, `Medium`, `High`, `XHigh`, `Thinking`).
+- **At-a-Glance Menu Bar Indicator:** Displays the orbital icon (`atom`) alongside the active model's abbreviation and lowest remaining quota percentage (e.g., `N 75%`, `C 75%`, `H 86%`, `ON 75%`, `OO 85%`) with no Dock icon or standalone window.
+- **Full Model & Effort Support:** Recognizes the Gemini 4 family (`Gemini 4 Neon`, `Gemini 4 Carbon`, `Gemini 4 Argon`, `Gemini 4 Hydrogen`), multi-step `Orchestrator` planner variants (`Orchestrator (Neon)`, `Orchestrator (Carbon)`, `Orchestrator (Argon)`, `Orchestrator (Claude Opus 5.5)`), `Gemini 3.8 Flash`, and third-party models (`Claude Opus 5.5`, `Claude Sonnet 5.5`, `GPT-OSS 120B`) across all reasoning effort tiers (`Low`, `Medium`, `High`, `XHigh` / `Extra High`, `Thinking`).
 - **Detailed Quota Popover:**
   - Active Xcode model label, matched quota group, and color-coded limiting percentage
   - 5-hour and weekly quota progress bars with local-timezone reset timestamps and relative countdowns
-  - Secondary view of all other available quota groups (such as `Claude and GPT models` and `Gemini 4 Argon`)
+  - Secondary view of all other available quota groups (such as `Claude and GPT models` or `Gemini Models`)
   - Clear status messages for missing Accessibility permission, inactive Xcode sessions, unmatched models, stale snapshots, and CLI errors
   - Last updated timestamp, manual `Refresh` (`Cmd + R`), inline `Settings`, and `Quit` (`Cmd + Q`)
 - **Smart Background Refresh:**
@@ -107,27 +107,30 @@ Because macOS GUI applications launched from Finder do not inherit interactive s
 
 ## How It Works
 
-1. **Xcode Model Detection (`XcodeModelDetector`):** Locates running Xcode instances via `NSRunningApplication`, traverses Xcode's window Accessibility hierarchy (`AXUIElement`), and parses the active model selector label into a structured `DetectedModel` (distinguishing effort levels like `(High)` or `(XHigh)` from planner qualifiers like `Orchestrator (Neon)` or `Orchestrator (Argon)`).
+1. **Xcode Model Detection (`XcodeModelDetector`):** Locates running Xcode instances via `NSRunningApplication`, traverses Xcode's window Accessibility hierarchy (`AXUIElement`), and parses the active model selector label into a structured `DetectedModel` (distinguishing effort levels like `(High)`, `(XHigh)`, or `(Extra High)` from planner qualifiers like `Orchestrator (Neon)`, `Orchestrator (Carbon)`, `Orchestrator (Argon)`, or `Orchestrator (Claude Opus 5.5)`).
 2. **Quota Retrieval (`AntigravityQuotaProvider`):** Runs `agy -p "/usage" --output-format json` in an isolated subprocess with timeout, handle cleanup, and task coalescing, then parses the JSON response into `QuotaSnapshot`, `QuotaGroup`, and `QuotaBucket` models.
 3. **Matching & Presentation (`ModelQuotaMapper`, `QuotaManager`, `PreferencesStore`, `AppUpdateManager`):** Matches the detected model to its quota group, manages background refresh intervals and stale-data handling, handles on-demand GitHub Release updates, and renders the SwiftUI `MenuBarExtra` interface.
 
 ## Supported Model Groups
 
-Based on Antigravity CLI usage output (subject to account configuration and future CLI updates):
+Based on current Antigravity CLI (`agy 1.5.16+`) usage output (subject to account configuration and future CLI updates):
 
 | Model | Menu Bar Badge | Effort / Planner Variants | Quota Group | Quota Windows |
 |---|---|---|---|---|
-| Gemini 4 Neon | `N` | Low, Medium, High, XHigh | Gemini Models | Weekly, 5-hour |
-| Gemini 4 Hydrogen | `H` | Low, Medium, High, XHigh | Gemini Models | Weekly, 5-hour |
-| Orchestrator (Neon) | `ON` | Neon Planner | Gemini Models | Weekly, 5-hour |
+| Gemini 4 Neon | `N` | Low, Medium, High, XHigh / Extra High | Gemini Models | Weekly, 5-hour |
 | Gemini 4 Carbon | `C` | Low, Medium, High | Gemini Models | Weekly, 5-hour |
+| Gemini 4 Hydrogen | `H` | Low, Medium, High, XHigh / Extra High | Gemini Models | Weekly, 5-hour |
+| Gemini 4 Argon *(Leaving Soon)* | `A` | Low, Medium, High | Gemini Models | Weekly, 5-hour |
+| Orchestrator (Neon) | `ON` | Neon Planner | Gemini Models | Weekly, 5-hour |
 | Orchestrator (Carbon) | `OC` | Carbon Planner | Gemini Models | Weekly, 5-hour |
-| Gemini 3.8 Flash | `F` | Low, Medium, High | Gemini Models | Weekly, 5-hour |
-| Gemini 4 Argon | `A` | Low, Medium, High | Gemini 4 Argon | Weekly |
-| Orchestrator (Argon) | `OA` | Argon Planner | Gemini 4 Argon | Weekly |
+| Orchestrator (Argon) | `OA` | Argon Planner | Gemini Models | Weekly, 5-hour |
+| Gemini 3.8 Flash *(Leaving Soon)* | `F` | Low, Medium, High | Gemini Models | Weekly, 5-hour |
 | Claude Opus 5.5 | `O` | Low, Medium, High, Thinking | Claude and GPT models | Weekly, 5-hour |
+| Orchestrator (Claude Opus 5.5) | `OO` | Claude Opus 5.5 Planner | Claude and GPT models | Weekly, 5-hour |
 | Claude Sonnet 5.5 | `S` | Low, Medium, High | Claude and GPT models | Weekly, 5-hour |
 | GPT-OSS 120B | `G` | Medium | Claude and GPT models | Weekly, 5-hour |
+
+> **Quota Pool Update (Nov 2026):** Antigravity merged the previously separate `Gemini 4 Argon` Pro quota bucket into the unified `Gemini Models` pool, expanded `Gemini 4 Carbon` to paid Google AI Pro users, and opened `Gemini 4 Hydrogen` to all users. If an older CLI or account tier still returns a separate `Gemini 4 Argon` group, the mapper remains backward-compatible and matches it automatically.
 
 ## Why This Approach?
 

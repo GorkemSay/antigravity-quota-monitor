@@ -82,6 +82,7 @@ struct QuotaManagerTests {
         let clock = MutableClock(Date(timeIntervalSince1970: 1_700_000_000))
         let hydrogen = try #require(DetectedModel.parse(rawLabel: "Gemini 4 Hydrogen (High)"))
         let argon = try #require(DetectedModel.parse(rawLabel: "Gemini 4 Argon (Medium)"))
+        let orchestratorOpus = try #require(DetectedModel.parse(rawLabel: "Orchestrator (Claude Opus 5.5)"))
         let detector = StubModelDetector(initial: .detected(hydrogen))
         let provider = StubQuotaProvider(initial: .success(ModelQuotaMapperTests.sampleSnapshot))
 
@@ -96,7 +97,11 @@ struct QuotaManagerTests {
 
         await detector.setResult(.detected(argon))
         await manager.refreshActiveModelOnly()
-        #expect(manager.menuBarDisplayText == "A 99%")
+        #expect(manager.menuBarDisplayText == "A 90%")
+
+        await detector.setResult(.detected(orchestratorOpus))
+        await manager.refreshActiveModelOnly()
+        #expect(manager.menuBarDisplayText == "OO 85%")
     }
 
     @Test

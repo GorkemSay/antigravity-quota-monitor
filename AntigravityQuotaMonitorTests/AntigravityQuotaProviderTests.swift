@@ -35,6 +35,13 @@ struct QuotaCLIResponseParserTests {
       "response": "Gemini Models\\tWeekly Limit Remaining\\t96%\\t2026-11-21T11:53:53Z\\n",
       "duration_seconds": 0,
       "num_turns": 0,
+      "usage": {
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "thinking_tokens": 0,
+        "cache_read_tokens": 0,
+        "total_tokens": 0
+      },
       "command": {
         "name": "usage",
         "data": {
@@ -42,7 +49,7 @@ struct QuotaCLIResponseParserTests {
           "groups": [
             {
               "name": "Gemini Models",
-              "description": "Models within this group: Gemini 4 Neon, Gemini 4 Hydrogen, Orchestrator (Neon), Gemini 3.8 Flash",
+              "description": "Models within this group: Gemini 4 Neon, Gemini 4 Carbon, Gemini 4 Argon, Gemini 4 Hydrogen, Orchestrator (Neon), Orchestrator (Carbon), Orchestrator (Argon), Gemini 3.8 Flash",
               "buckets": [
                 {
                   "id": "gemini-weekly",
@@ -50,7 +57,7 @@ struct QuotaCLIResponseParserTests {
                   "description": "You have used some of your weekly limit.",
                   "window": "weekly",
                   "remaining_fraction": 0.9595876336097717,
-                  "reset_time": "2026-11-21T11:53:53Z"
+                  "reset_time": "2026-11-30T20:03:02Z"
                 },
                 {
                   "id": "gemini-5h",
@@ -58,7 +65,7 @@ struct QuotaCLIResponseParserTests {
                   "description": "You have used some of your 5-hour limit.",
                   "window": "5h",
                   "remaining_fraction": 0.9070035815238953,
-                  "reset_time": "2026-11-14T16:53:53Z"
+                  "reset_time": "2026-11-24T16:57:17Z"
                 }
               ]
             },
@@ -71,28 +78,14 @@ struct QuotaCLIResponseParserTests {
                   "name": "Weekly Limit Remaining",
                   "window": "weekly",
                   "remaining_fraction": 1,
-                  "reset_time": "2026-11-21T14:16:55Z"
+                  "reset_time": "2026-12-01T12:00:14Z"
                 },
                 {
                   "id": "3p-5h",
                   "name": "Five Hour Limit Remaining",
                   "window": "5h",
                   "remaining_fraction": 1,
-                  "reset_time": "2026-11-14T19:16:55.123Z"
-                }
-              ]
-            },
-            {
-              "name": "Gemini 4 Argon",
-              "description": "For paid Pro plans, Argon quota is separate.",
-              "buckets": [
-                {
-                  "id": "gemini-argon-wtu-weekly",
-                  "name": "Gemini 4 Argon Weekly Limit",
-                  "description": "You have used some of your weekly limit.",
-                  "window": "weekly",
-                  "remaining_fraction": 0.9861493110656738,
-                  "reset_time": "2026-11-21T12:59:21Z"
+                  "reset_time": "2026-11-24T17:00:14.123Z"
                 }
               ]
             }
@@ -110,7 +103,7 @@ struct QuotaCLIResponseParserTests {
         let snapshot = try QuotaCLIResponseParser.parse(data: data, fetchedAt: fetchedAt)
 
         #expect(snapshot.fetchedAt == fetchedAt)
-        #expect(snapshot.groups.count == 3)
+        #expect(snapshot.groups.count == 2)
 
         let gemini = snapshot.groups[0]
         #expect(gemini.name == "Gemini Models")
@@ -121,13 +114,10 @@ struct QuotaCLIResponseParserTests {
         #expect(gemini.buckets[0].resetTime != nil)
 
         let claude = snapshot.groups[1]
+        #expect(claude.name == "Claude and GPT models")
         #expect(claude.buckets[0].description == nil)
         #expect(claude.buckets[0].remainingPercent == 100)
         #expect(claude.buckets[1].resetTime != nil)
-
-        let argon = snapshot.groups[2]
-        #expect(argon.buckets.count == 1)
-        #expect(argon.buckets[0].remainingPercent == 99)
     }
 
     @Test
@@ -216,7 +206,7 @@ struct AntigravityQuotaProviderTests {
         )
 
         let snapshot = try await provider.fetchQuota()
-        #expect(snapshot.groups.count == 3)
+        #expect(snapshot.groups.count == 2)
         #expect(await runner.lastExecutablePath == "/Users/tester/.local/bin/agy")
         #expect(await runner.lastArguments == ["-p", "/usage", "--output-format", "json"])
     }

@@ -13,7 +13,7 @@
 
 ## Current Milestone
 
-**Milestone 9 — In-App Self-Updater, Stability Hardening & v1.2.0 Release** (Completed)
+**Milestone 10 — Unified Gemini Quota Pool (Argon Merge) & Orchestrator Claude Opus 5.5 Support** (Completed)
 
 ---
 
@@ -71,6 +71,19 @@
 - Updated `last-upgrade` in `AntigravityQuotaMonitor.xcodeproj/project.xcproj` to `27.2` to clear Xcode's `"Update to recommended settings"` project warning.
 - Bumped version to `v1.2.0` (`MARKETING_VERSION = 1.2.0`, `CURRENT_PROJECT_VERSION = 3`), refreshed documentation screenshots, installed `/Applications/Antigravity Quota Monitor.app`, and published GitHub Release `v1.2.0`.
 
+### Milestone 10 — Unified Gemini Quota Pool (Argon Merge) & Orchestrator Claude Opus 5.5 Support
+- Verified live Antigravity CLI (`agy 1.5.16`) `/usage --output-format json` and `agy models` outputs following the November 23, 2026 Antigravity tier & quota updates:
+  - Separate `Gemini 4 Argon` quota bucket removed for paid Pro plans and merged into the unified `Gemini Models` pool (`Gemini 4 Neon`, `Gemini 4 Carbon`, `Gemini 4 Argon`, `Gemini 4 Hydrogen`, `Orchestrator (Neon)`, `Orchestrator (Carbon)`, `Orchestrator (Argon)`, `Gemini 3.8 Flash`).
+  - `Gemini 4 Carbon` expanded to paid Google AI Pro users and `Gemini 4 Hydrogen` opened to all users.
+  - `Orchestrator` picker now supports `Claude Opus 5.5` as planner alongside Gemini 4 Neon, Carbon, and Argon.
+- Updated `ModelQuotaMapper.swift`:
+  - Argon models (`Gemini 4 Argon`, `Orchestrator (Argon)`) now fall through to the unified `Gemini Models` group when no separate Argon group is present, while keeping backward compatibility if an older CLI or tier still returns a separate `Gemini 4 Argon` group.
+  - Third-party model/planner identifiers (`claude`, `opus`, `sonnet`, `gpt`) are now checked before the generic `orchestrator` fallback so `Orchestrator (Claude Opus 5.5)` / `Orchestrator (Opus)` map accurately to `Claude and GPT models`.
+- Updated `DetectedModel.swift`:
+  - Added Orchestrator planner abbreviations for `Opus` (`OO`), `Sonnet` (`OS`), and `Hydrogen` (`OH`) alongside `Neon` (`ON`), `Carbon` (`OC`), and `Argon` (`OA`).
+  - Added `"extra high"` and `"x-high"` to recognized trailing effort descriptors.
+- Updated unit test fixtures and added coverage in `AntigravityQuotaProviderTests.swift`, `ModelQuotaMapperTests.swift`, `XcodeModelDetectorTests.swift`, and `QuotaManagerTests.swift`, and refreshed `README.md`.
+
 ---
 
 ## Technical Decisions
@@ -78,15 +91,16 @@
 1. **Product Name vs. Module Name Separation:** Setting `PRODUCT_NAME = "Antigravity Quota Monitor"` and `PRODUCT_MODULE_NAME = "AntigravityQuotaMonitor"` produces a user-friendly spaced `.app` bundle name in `/Applications` while keeping Swift module imports intact.
 2. **Explicit Pipe Cleanup:** Closing `stdoutPipe` and `stderrPipe` read handles immediately after `readDataToEndOfFile()` (and on launch errors) guarantees zero descriptor leaks across long-running menu bar polling sessions.
 3. **Privacy & Zero Raw Logging:** No conversation text, OAuth tokens, or raw CLI outputs are logged, cached on disk, or sent to custom endpoints.
-4. **Effort vs. Planner Parenthetical Parsing:** `DetectedModel.parse` distinguishes trailing reasoning effort qualifiers (`(Low)`, `(Medium)`, `(High)`, `(XHigh)`, `(Thinking)`) from model planner qualifiers (`Orchestrator (Neon)`, `Orchestrator (Argon)`, `Orchestrator (Carbon)`) so planner identity is preserved for accurate quota group mapping and distinct menu bar abbreviations (`ON`, `OA`, `OC`).
-5. **Detached Shell Swap for In-App Updates:** `SystemAppUpdateInstaller` extracts the downloaded release archive into a temporary staging directory, verifies the `.app` bundle, clears quarantine attributes, spawns a detached `/bin/sh` helper that waits for the current PID to terminate before replacing the app bundle via `ditto` and relaunching via `open -n`, and then terminates the running instance cleanly.
+4. **Effort vs. Planner Parenthetical Parsing:** `DetectedModel.parse` distinguishes trailing reasoning effort qualifiers (`(Low)`, `(Medium)`, `(High)`, `(XHigh)`, `(Extra High)`, `(Thinking)`) from model planner qualifiers (`Orchestrator (Neon)`, `Orchestrator (Carbon)`, `Orchestrator (Argon)`, `Orchestrator (Claude Opus 5.5)`) so planner identity is preserved for accurate quota group mapping and distinct menu bar abbreviations (`ON`, `OC`, `OA`, `OO`).
+5. **Backward-Compatible Unified Gemini Pool Mapping:** `ModelQuotaMapper` prioritizes third-party planner/model names (`claude`, `opus`, `sonnet`, `gpt`) before generic `orchestrator` fallbacks, prefers a dedicated `Gemini 4 Argon` group only when explicitly present in a snapshot, and otherwise maps Argon seamlessly into the unified `Gemini Models` group.
+6. **Detached Shell Swap for In-App Updates:** `SystemAppUpdateInstaller` extracts the downloaded release archive into a temporary staging directory, verifies the `.app` bundle, clears quarantine attributes, spawns a detached `/bin/sh` helper that waits for the current PID to terminate before replacing the app bundle via `ditto` and relaunching via `open -n`, and then terminates the running instance cleanly.
 
 ---
 
 ## Testing Results
 
-- **Unit & UI Tests (`AntigravityQuotaMonitorTests` + `AntigravityQuotaMonitorUITests`):** `43 passed, 0 failed`, zero compiler or navigator warnings.
-- **Release Build (`xcodebuild build -configuration Release`):** Succeeded; `codesign --verify --deep --strict` passed (`CODESIGN_OK`).
+- **Unit Tests (`AntigravityQuotaMonitorTests`):** `43 passed, 0 failed`, zero compiler or navigator warnings.
+- **Live CLI & Xcode Integration Verification (`agy 1.5.16`):** Verified live `XcodeModelDetector` detection (`Gemini 4 Neon (Medium)` -> `N`) and live `AntigravityQuotaProvider` + `ModelQuotaMapper` resolution across all 20 Gemini 4, Orchestrator (Neon/Carbon/Argon/Claude Opus 5.5), Gemini 3.8 Flash, Claude 5.5, and GPT-OSS 120B variants against real `/usage` output.
 - **Privacy & Security Audit:** Zero raw logging, zero credential handling, only public read-only GitHub Releases API requests when user clicks `Check for Updates`.
 
 ---

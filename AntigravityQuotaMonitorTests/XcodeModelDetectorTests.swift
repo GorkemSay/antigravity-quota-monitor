@@ -87,6 +87,11 @@ struct DetectedModelTests {
         #expect(neon?.effortLevel == "XHigh")
         #expect(neon?.shortAbbreviation == "N")
 
+        let neonExtraHigh = DetectedModel.parse(rawLabel: "Gemini 4 Neon (Extra High)")
+        #expect(neonExtraHigh?.normalizedName == "Gemini 4 Neon")
+        #expect(neonExtraHigh?.effortLevel == "Extra High")
+        #expect(neonExtraHigh?.shortAbbreviation == "N")
+
         let carbon = DetectedModel.parse(rawLabel: "Gemini 4 Carbon (High)")
         #expect(carbon?.normalizedName == "Gemini 4 Carbon")
         #expect(carbon?.effortLevel == "High")
@@ -101,6 +106,11 @@ struct DetectedModelTests {
         #expect(orchestratorNeon?.effortLevel == nil)
         #expect(orchestratorNeon?.shortAbbreviation == "ON")
 
+        let orchestratorNeonFull = DetectedModel.parse(rawLabel: "Orchestrator (Gemini 4 Neon High)")
+        #expect(orchestratorNeonFull?.normalizedName == "Orchestrator (Gemini 4 Neon High)")
+        #expect(orchestratorNeonFull?.effortLevel == nil)
+        #expect(orchestratorNeonFull?.shortAbbreviation == "ON")
+
         let orchestratorArgon = DetectedModel.parse(rawLabel: "Orchestrator (Argon)")
         #expect(orchestratorArgon?.normalizedName == "Orchestrator (Argon)")
         #expect(orchestratorArgon?.effortLevel == nil)
@@ -110,6 +120,27 @@ struct DetectedModelTests {
         #expect(orchestratorCarbon?.normalizedName == "Orchestrator (Carbon)")
         #expect(orchestratorCarbon?.effortLevel == nil)
         #expect(orchestratorCarbon?.shortAbbreviation == "OC")
+
+        let orchestratorHydrogen = DetectedModel.parse(rawLabel: "Orchestrator (Hydrogen)")
+        #expect(orchestratorHydrogen?.normalizedName == "Orchestrator (Hydrogen)")
+        #expect(orchestratorHydrogen?.effortLevel == nil)
+        #expect(orchestratorHydrogen?.shortAbbreviation == "OH")
+
+        let orchestratorOpus = DetectedModel.parse(rawLabel: "Orchestrator (Claude Opus 5.5)")
+        #expect(orchestratorOpus?.normalizedName == "Orchestrator (Claude Opus 5.5)")
+        #expect(orchestratorOpus?.effortLevel == nil)
+        #expect(orchestratorOpus?.shortAbbreviation == "OO")
+
+        let orchestratorOpusWithEffort = DetectedModel.parse(rawLabel: "Orchestrator (Claude Opus 5.5) (Medium)")
+        #expect(orchestratorOpusWithEffort?.normalizedName == "Orchestrator (Claude Opus 5.5)")
+        #expect(orchestratorOpusWithEffort?.effortLevel == "Medium")
+        #expect(orchestratorOpusWithEffort?.shortAbbreviation == "OO")
+
+        let orchestratorOpusInline = DetectedModel.parse(rawLabel: "Orchestrator Claude Opus 5.5 Medium")
+        #expect(orchestratorOpusInline?.shortAbbreviation == "OO")
+
+        let orchestratorSonnet = DetectedModel.parse(rawLabel: "Orchestrator (Claude Sonnet 5.5)")
+        #expect(orchestratorSonnet?.shortAbbreviation == "OS")
     }
 
     @Test

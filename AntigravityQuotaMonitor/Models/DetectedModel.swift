@@ -44,6 +44,8 @@ nonisolated struct DetectedModel: Sendable, Equatable {
             "medium",
             "high",
             "xhigh",
+            "x-high",
+            "extra high",
             "max",
             "thinking",
             "fast",
@@ -86,8 +88,11 @@ nonisolated struct DetectedModel: Sendable, Equatable {
 
         if lower.contains("orchestrator") {
             if lower.contains("neon") || rawLower.contains("neon") { return "ON" }
-            if lower.contains("argon") || rawLower.contains("argon") { return "OA" }
             if lower.contains("carbon") || rawLower.contains("carbon") { return "OC" }
+            if lower.contains("argon") || rawLower.contains("argon") { return "OA" }
+            if lower.contains("hydrogen") || rawLower.contains("hydrogen") { return "OH" }
+            if lower.contains("opus") || rawLower.contains("opus") { return "OO" }
+            if lower.contains("sonnet") || rawLower.contains("sonnet") { return "OS" }
             return "OR"
         }
         if lower.contains("neon") { return "N" }
