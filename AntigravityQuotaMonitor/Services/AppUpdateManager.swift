@@ -306,7 +306,7 @@ final class AppUpdateManager {
     private(set) var state: AppUpdateState = .idle
 
     init(
-        currentVersion: String = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.2.0",
+        currentVersion: String = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.3.0",
         currentBundleURL: URL = Bundle.main.bundleURL,
         currentProcessID: pid_t = ProcessInfo.processInfo.processIdentifier,
         releaseEndpointURL: URL = SystemAppUpdateNetworkClient.latestReleaseURL,

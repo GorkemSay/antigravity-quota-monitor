@@ -30,7 +30,7 @@ Antigravity Quota Monitor lives unobtrusively in the macOS menu bar (`LSUIElemen
   - Optional custom `agy` CLI executable path override
   - Optional **Launch at Login** toggle via Apple's `ServiceManagement` (`SMAppService.mainApp`)
   - Live Accessibility permission status indicator
-  - Built-in **Check for Updates** button that compares your installed version against the latest GitHub Release (`Up to date (v1.2.0)` with a green checkmark, or `vX.Y.Z available!` with a one-click **Update** button that automatically downloads, replaces, and relaunches the app)
+  - Built-in **Check for Updates** button that compares your installed version against the latest GitHub Release (`Up to date (v1.3.0)` with a green checkmark, or `vX.Y.Z available!` with a one-click **Update** button that automatically downloads, replaces, and relaunches the app)
 
 ## Screenshots
 

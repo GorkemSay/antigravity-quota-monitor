@@ -83,6 +83,7 @@
   - Added Orchestrator planner abbreviations for `Opus` (`OO`), `Sonnet` (`OS`), and `Hydrogen` (`OH`) alongside `Neon` (`ON`), `Carbon` (`OC`), and `Argon` (`OA`).
   - Added `"extra high"` and `"x-high"` to recognized trailing effort descriptors.
 - Updated unit test fixtures and added coverage in `AntigravityQuotaProviderTests.swift`, `ModelQuotaMapperTests.swift`, `XcodeModelDetectorTests.swift`, and `QuotaManagerTests.swift`, and refreshed `README.md`.
+- Bumped version to `v1.3.0` (`MARKETING_VERSION = 1.3.0`, `CURRENT_PROJECT_VERSION = 4`) and published GitHub Release `v1.3.0` (`Antigravity-Quota-Monitor-macOS.zip`).
 
 ---
 
@@ -115,4 +116,4 @@
 
 - **Repository:** `https://github.com/GorkemSay/antigravity-quota-monitor`
 - **Branch:** `main`
-- **Release:** `v1.2.0` (`Antigravity-Quota-Monitor-macOS.zip`)
+- **Release:** `v1.3.0` (`Antigravity-Quota-Monitor-macOS.zip`)
