@@ -16,7 +16,7 @@ Antigravity Quota Monitor lives unobtrusively in the macOS menu bar (`LSUIElemen
 - **Full Model & Effort Support:** Recognizes the Gemini 4 family (`Gemini 4 Neon`, `Gemini 4 Carbon`, `Gemini 4 Argon`, `Gemini 4 Hydrogen`), multi-step `Orchestrator` planner variants (`Orchestrator (Neon)`, `Orchestrator (Carbon)`, `Orchestrator (Argon)`, `Orchestrator (Claude Opus 5.5)`), `Gemini 3.8 Flash`, and third-party models (`Claude Opus 5.5`, `Claude Sonnet 5.5`, `GPT-OSS 120B`) across all reasoning effort tiers (`Low`, `Medium`, `High`, `XHigh` / `Extra High`, `Thinking`).
 - **Detailed Quota Popover:**
   - Active Xcode model label, matched quota group, and color-coded limiting percentage
-  - 5-hour and weekly quota progress bars with local-timezone reset timestamps and relative countdowns
+  - Weekly and 5-hour quota progress bars with local-timezone reset timestamps and relative countdowns
   - Secondary view of all other available quota groups (such as `Claude and GPT models` or `Gemini Models`)
   - Clear status messages for missing Accessibility permission, inactive Xcode sessions, unmatched models, stale snapshots, and CLI errors
   - Last updated timestamp, manual `Refresh` (`Cmd + R`), inline `Settings`, and `Quit` (`Cmd + Q`)
@@ -113,7 +113,7 @@ Because macOS GUI applications launched from Finder do not inherit interactive s
 
 ## Supported Model Groups
 
-Based on current Antigravity CLI (`agy 1.5.16+`) usage output (subject to account configuration and future CLI updates):
+Based on current Antigravity CLI (`agy 1.5.16+`, verified on `1.5.18`) usage output (subject to account configuration and future CLI updates):
 
 | Model | Menu Bar Badge | Effort / Planner Variants | Quota Group | Quota Windows |
 |---|---|---|---|---|
